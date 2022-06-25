@@ -1,7 +1,7 @@
 /**
 * Name: Model1
 * Based on the internal empty template. 
-* Author: group 2
+* Author: hieplnc
 * Tags: 
 */
 
