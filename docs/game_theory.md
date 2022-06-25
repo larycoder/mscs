@@ -1,0 +1,49 @@
+Project
+- Shelf Agents:
+	- Shape
+- People Agents:
+	- Come time
+	- Height
+	- Moving skill
+	- Satisfaction status
+		- Formula -> diff_of(target - eye-level) * buy_rate
+		- If (Satisfaction status) > threshold : comeback and persuade friendship group to come
+	- Buying rules:
+		- Target (products to buy)
+		- Price of the product
+		- Linked buy rate -> buy random products in the list
+	
+- Product Agents: (pre-define)
+	- Position on shelf (Location -> Height, which shelf) 
+	- quantities (reduce when some one buy)
+	- Import price
+	- Sell price
+	- Linked_products (create friendship to list of other product)
+
+- World Agents:
+	- Tax -- could avoid (already count import price)
+	- Vacation: In vacation the buy_rate or the more people come to the shop
+	- In gate, checkout gate
+- Global rule (Monitor):
+	- Shop owner has initial money
+	- After each cycle (month), the profit will add to the initial money
+	- Cost : buy product + marketing price + customer care price + staff's salary (over one cycle)
+	- Revenues : all price of sold products (over one cycle)
+	- Profit: Revenues - Cost (over one cycle)
+	- List of sold products on each category over one cycle (Cost, Revenues, Profit, Nb_of_sold)
+- Shop owner
+	- Action:
+		- Chose product to buy each cycle
+		- Marketing
+		- Customer Care
+
+	- Strategy:
+		- SaleOff:
+			- Time
+			- Category
+			- Products
+		- Change open, close time
+		- Increase marketing system
+		- Increase customer care system
+		- Increase the staff quality
+		- Chose height of each product and price
