@@ -30,8 +30,8 @@ global {
 	geometry shape <- envelope(wall_shapefile);
 	
 	bool display_free_space <- false parameter: true;
-	bool display_force <- false parameter: true;
-	bool display_target <- false parameter: true;
+	bool display_force <- true parameter: true;
+	bool display_target <- true parameter: true;
 	bool display_circle_min_dist <- true parameter: true;
 	
 	float P_shoulder_length <- 0.45 parameter: true;
