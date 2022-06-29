@@ -83,7 +83,7 @@ global {
 
 		network <- as_edge_graph(pedestrian_path);
 		
-		ask pedestrian_path {
+		ask pedestrian_path parallel: true{
 			do build_intersection_areas pedestrian_graph: network;
 		}
 		
@@ -165,7 +165,7 @@ species wall {
 	}
 }
 
-species people skills: [pedestrian]{
+species people skills: [pedestrian] parallel: true{
 	rgb color <- rnd_color(255);
 	float speed <- gauss(5,1.5) #km/#h min: 2 #km/#h;
 
@@ -204,7 +204,7 @@ species people skills: [pedestrian]{
 }
 
 
-species friendship_link {
+species friendship_link parallel: true{
 	
 	aspect default {
 		draw shape color: #blue;
