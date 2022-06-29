@@ -9,13 +9,30 @@
 model Productsonshelf
 
 /* Insert your model definition here */
+/*
+ * Description:
+ * - Agent: People
+ * Init with a fix number, having friendship graph, having opinion about the shop
+ * 		Action: an amount of people comes to shop with expect product
+ * 		
+ */
 
-global{
-    float max_range <- 5.0;
-    int number_of_agents <- 5;
-    
-    
-    bool display_free_space <- false parameter: true;
+
+
+global {
+	shape_file free_spaces_shape_file <- shape_file("results/free spaces.shp");
+	file wall_shapefile <- file("results/shelves.shp");
+	
+	
+	shape_file open_area_shape_file <- shape_file("results/open area.shp");
+	shape_file pedestrian_paths_shape_file <- shape_file("results/pedestrian paths.shp");
+
+	
+	graph network;
+	
+	geometry shape <- envelope(wall_shapefile);
+	
+	bool display_free_space <- false parameter: true;
 	bool display_force <- true parameter: true;
 	bool display_target <- true parameter: true;
 	bool display_circle_min_dist <- true parameter: true;
@@ -47,60 +64,27 @@ global{
 	float P_relaxion_SFM_simple parameter: true <- 0.54 category: "SFM simple" ;
 	float P_A_pedestrian_SFM_simple parameter: true <-4.5category: "SFM simple" ;
 	
-	// Generate path params
-	float simplification_dist <- 0.5; //simplification distance for the final geometries
-	bool add_points_open_area <- true;//add points to open areas
- 	bool random_densification <- false;//random densification (if true, use random points to fill open areas; if false, use uniform points), 
- 	float min_dist_open_area <- 0.1;//min distance to considered an area as open area, 
- 	float density_open_area <- 0.01; //density of points in the open areas (float)
- 	bool clean_network <-  true; 
-	float tol_cliping <- 1.0; //tolerance for the cliping in triangulation (float; distance), 
-	float tol_triangulation <- 0.1; //tolerance for the triangulation 
-	float min_dist_obstacles_filtering <- 0.0;// minimal distance to obstacles to keep a path (float; if 0.0, no filtering), 
-	
-	
 	float step <- 0.1;
-    
-    int nb_people <- 250;
-    graph network;
-    geometry open_area ;
-    
-    geometry shape <- envelope(wall_shapefile);
-    
-    init {
-    	
-    open_area <- copy(shape);
-    create my_species number: number_of_agents;
-    
-    
-    open_area <- first(open_area.contents);
-    create wall from:wall_shapefile {
-			open_area <- open_area -(shape buffer (P_shoulder_length/2.0));
-		}
-		
-//    create pedestrian_path from: pedestrian_paths_shape_file {
-//			list<geometry> fs <- free_spaces_shape_file overlapping self;
-//			free_space <- fs first_with (each covers shape); 
-//		}
+	int nb_people <- 250;
+
+	geometry open_area ;
 	
-	list<geometry> generated_lines <- generate_pedestrian_network([],
-		[open_area],add_points_open_area,random_densification,
-		min_dist_open_area,density_open_area,clean_network,
-		tol_cliping,tol_triangulation,min_dist_obstacles_filtering,
-		simplification_dist
-	);
-		
-	create pedestrian_path from: generated_lines  {
-			do initialize bounds:[open_area] distance: min(10.0,(wall closest_to self) distance_to self) masked_by: [wall] distance_extremity: 1.0;
+	init {
+		open_area <- first(open_area_shape_file.contents);
+		create wall from:wall_shapefile;
+		create pedestrian_path from: pedestrian_paths_shape_file {
+			list<geometry> fs <- free_spaces_shape_file overlapping self;
+			free_space <- fs first_with (each covers shape); 
 		}
 		
-    network <- as_edge_graph(pedestrian_path);
-    ask pedestrian_path {
+
+		network <- as_edge_graph(pedestrian_path);
+		
+		ask pedestrian_path {
 			do build_intersection_areas pedestrian_graph: network;
 		}
-    
-    
-    create people number:nb_people{
+	
+		create people number:nb_people{
 			location <- any_location_in(one_of(open_area));
 			obstacle_consideration_distance <-P_obstacle_consideration_distance;
 			pedestrian_consideration_distance <-P_pedestrian_consideration_distance;
@@ -134,66 +118,35 @@ global{
 				minimal_distance <- P_minimal_distance_advanced;
 			
 			}
-		}
-    }
-    
-    reflex update {
-    ask my_species {
-        do wander amplitude: 180.0; 
-        ask my_grid at_distance(max_range) {
-        	
-        if(self overlaps myself) {
-            self.color_value <- 2;
-        } else if (self.color_value != 2) {
-            self.color_value <- 1;
-        }
-        
-        }
-    }
-    ask my_grid {
-        do update_color;
-    }   
-    }
+		}	
+	}
 	
-	
+	reflex stop when: empty(people) {
+		do pause;
+	}
 	
 }
-
-species my_species skills:[moving] {
-    float speed <- 2.0;
-    aspect default {
-    draw circle(1) color: #blue;
-    }
-}
-
-grid my_grid width:30 height:30 {
-    int color_value <- 0;
-    action update_color {
-    if (color_value = 0) {
-        color <- #green;
-    } else if (color_value = 1) {
-        color <- #yellow;
-    } else if (color_value = 2) {
-        color <- #red;
-    }
-    color_value <- 0;
-    }
-}
-
 
 species pedestrian_path skills: [pedestrian_road]{
-	rgb color <- rnd_color(255);
-	aspect default {
-		draw shape  color: color;
+	aspect default { 
+		draw shape  color: #gray;
 	}
-//	aspect free_area_aspect {
-//		if(display_free_space and free_space != nil) {
-//			draw free_space color: #cyan border: #black;
-//		}
-//	}
+	aspect free_area_aspect {
+		if(display_free_space and free_space != nil) {
+			draw free_space color: #lightpink border: #black;
+		}
+		
+	}
 }
 
 species wall {
+	geometry free_space;
+	float high <- rnd(10.0, 20.0);
+	
+	aspect demo {
+		draw shape border: #black depth: high texture: ["../includes/top.png","../includes/texture5.jpg"];
+	}
+	
 	aspect default {
 		draw shape + (P_shoulder_length/2.0) color: #gray border: #black;
 	}
@@ -212,16 +165,16 @@ species people skills: [pedestrian]{
 	
 	aspect default {
 		
-//		if display_circle_min_dist and minimal_distance > 0 {
-//			draw circle(minimal_distance).contour color: color;
-//		}
+		if display_circle_min_dist and minimal_distance > 0 {
+			draw circle(minimal_distance).contour color: color;
+		}
 		
 		draw triangle(shoulder_length) color: color rotate: heading + 90.0;
 		
-		if current_waypoint != nil {
+		if display_target and current_waypoint != nil {
 			draw line([location,current_waypoint]) color: color;
 		}
-		if  true {
+		if  display_force {
 			loop op over: forces.keys {
 				if (species(agent(op)) = wall ) {
 					draw line([location, location + point(forces[op])]) color: #red end_arrow: 0.1;
@@ -238,11 +191,15 @@ species people skills: [pedestrian]{
 }
 
 
-experiment MyExperiment type: gui {
-    output {
-        display MyDisplay type: java2D {
-            grid my_grid lines: #black;
-            species my_species aspect: default; 
-        }
-    }
+experiment normal_sim type: gui {
+	float minimum_cycle_duration <- 0.02;
+		output {
+		display map type: opengl{
+			species wall refresh: false;
+			species pedestrian_path aspect:free_area_aspect transparency: 0.5 ;
+			species pedestrian_path refresh: false;
+			species people;
+		}
+	}
 }
+ 

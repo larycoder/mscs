@@ -17,12 +17,12 @@ model Modelutils6walking
 
 
 global {
-	shape_file free_spaces_shape_file <- shape_file("../includes/free spaces.shp");
-	file wall_shapefile <- file("../includes/walls.shp");
+	shape_file free_spaces_shape_file <- shape_file("../results/free spaces.shp");
+	file wall_shapefile <- file("../results/shelves.shp");
 	
 	
-	shape_file open_area_shape_file <- shape_file("../includes/open area.shp");
-	shape_file pedestrian_paths_shape_file <- shape_file("../includes/pedestrian paths.shp");
+	shape_file open_area_shape_file <- shape_file("../results/open area.shp");
+	shape_file pedestrian_paths_shape_file <- shape_file("../results/pedestrian paths.shp");
 
 	
 	graph network;
