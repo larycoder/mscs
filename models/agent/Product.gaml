@@ -15,8 +15,11 @@ global {
 }
 
 species Product {
+	rgb color <- #green;
+	geometry shape <- circle(10);
+
 	aspect default {
-		draw circle(10) color: #green;
+		draw shape color: color;
 	}
 }
 

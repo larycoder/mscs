@@ -15,8 +15,11 @@ global {
 }
 
 species People {
+	rgb color <- #blue;
+	geometry shape <- circle(10);
+
 	aspect default {
-		draw circle(10) color: #blue;
+		draw shape color: color;
 	}
 }
 

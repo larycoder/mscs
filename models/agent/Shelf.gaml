@@ -16,9 +16,11 @@ global {
 
 species Shelf {
 	float deg <- rnd(0.0, 180.0);
+	rgb color <- #purple;
+	geometry shape <- rectangle(100, 50);
 
 	aspect default {
-		draw rectangle(100, 50) color: #red rotate: deg;
+		draw shape color: color rotate: deg;
 	}
 }
 
