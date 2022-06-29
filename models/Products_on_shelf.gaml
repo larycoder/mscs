@@ -65,9 +65,12 @@ global {
 	float P_A_pedestrian_SFM_simple parameter: true <-4.5category: "SFM simple" ;
 	
 	float step <- 0.1;
-	int nb_people <- 250;
+	int nb_people <- 50;
 
 	geometry open_area ;
+	
+	//social graph (not spatial) representing the friendship links between people
+	graph friendship_graph <- graph([]);
 	
 	init {
 		open_area <- first(open_area_shape_file.contents);
@@ -83,7 +86,7 @@ global {
 		ask pedestrian_path {
 			do build_intersection_areas pedestrian_graph: network;
 		}
-	
+		
 		create people number:nb_people{
 			location <- any_location_in(one_of(open_area));
 			obstacle_consideration_distance <-P_obstacle_consideration_distance;
@@ -118,7 +121,17 @@ global {
 				minimal_distance <- P_minimal_distance_advanced;
 			
 			}
-		}	
+		}
+		
+		loop times: nb_people*2 {
+			people p1 <- one_of(people);
+			people p2 <- one_of(list(people) - p1);
+			create friendship_link  {
+				add edge (p1, p2, self) to: friendship_graph;
+				shape <- link(p1,p2);
+			}
+		}
+			
 	}
 	
 	reflex stop when: empty(people) {
@@ -171,10 +184,10 @@ species people skills: [pedestrian]{
 		
 		draw triangle(shoulder_length) color: color rotate: heading + 90.0;
 		
-		if display_target and current_waypoint != nil {
+		if false and current_waypoint != nil {
 			draw line([location,current_waypoint]) color: color;
 		}
-		if  display_force {
+		if  false {
 			loop op over: forces.keys {
 				if (species(agent(op)) = wall ) {
 					draw line([location, location + point(forces[op])]) color: #red end_arrow: 0.1;
@@ -191,6 +204,13 @@ species people skills: [pedestrian]{
 }
 
 
+species friendship_link {
+	
+	aspect default {
+		draw shape color: #blue;
+	}
+}
+
 experiment normal_sim type: gui {
 	float minimum_cycle_duration <- 0.02;
 		output {
@@ -200,6 +220,11 @@ experiment normal_sim type: gui {
 			species pedestrian_path refresh: false;
 			species people;
 		}
+		display friendship type: opengl{
+			species friendship_link ;
+			species people;
+			
+			}
 	}
 }
  
