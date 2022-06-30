@@ -13,9 +13,7 @@ import "Background.gaml"
 /* Insert your model definition here */
 
 global {
-	geometry shape <- square(1000);
-	geometry open_area <- nil;
-	graph network <- nil;
+	geometry shape <- envelope(wall_shape_file);
 }
 
 species people skills: [ pedestrian ] {
@@ -23,15 +21,18 @@ species people skills: [ pedestrian ] {
 	geometry shape <- circle(10);
 	float speed <- gauss(5, 1.5)#km/#h min: 2#km/#h;
 	
+	geometry my_open_area <- nil;
+	graph my_network <- nil;
+	
 	reflex move {
 		if (final_waypoint = nil) {
-			do compute_virtual_path pedestrian_graph: network target: any_location_in(open_area);
+			do compute_virtual_path pedestrian_graph: my_network target: any_location_in(my_open_area);
 		}
 		do walk;
 	}
 
 	aspect default {
-		draw shape color: color;
+		draw circle(0.5) color: color;
 	}
 	
 	aspect advance {
