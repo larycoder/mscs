@@ -50,3 +50,14 @@ Project
 		- Increase customer care system
 		- Increase the staff quality
 		- Chose height of each product and price
+- Game rule:
+    - Their are about 15-20 products construct by csv with different price, some will link to eachother
+	
+	- Choose the stratergy
+    	- Choose [expensive, average, cheap] to the [high, eye, low] level
+    	- Ramdomly place product
+	- Client have random_of_max_money or inf_money so their happiness depent on that when they saw the product on the shelf
+- Game simulation
+	- Game event (random more number of ppl to the shop)
+	- Each month show the number of customer served + total sell product + profit
+	- Scoring method: number of customer + total sell product + profit
