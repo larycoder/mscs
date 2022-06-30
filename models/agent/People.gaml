@@ -14,7 +14,7 @@ import "Background.gaml"
 
 global {
 	geometry shape <- envelope(wall_shape_file);
-	
+
 	// pedestrian strategy parameters
 	float P_shoulder_length <- 0.45;
 	float P_proba_detour <- 0.5;

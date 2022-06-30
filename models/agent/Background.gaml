@@ -22,7 +22,7 @@ global {
 
 species pedestrian_path skills: [pedestrian_road] {
 	aspect default { 
-		draw shape  color: #blue;
+		draw shape  color: #black;
 	}
 }
 

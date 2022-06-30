@@ -16,7 +16,9 @@ global {
 
 species store_product {
 	rgb color <- #green;
-	geometry shape <- circle(10);
+	geometry shape <- circle(10);	
+	int category;
+	int price;
 
 	aspect default {
 		draw shape color: color;
