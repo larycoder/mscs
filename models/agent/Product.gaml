@@ -11,12 +11,13 @@ model Product
 /* Insert your model definition here */
 
 global {
-	geometry shape <- square(1000);
+	geometry shape <- square(50);
 }
 
 species store_product {
+	geometry shape <- circle(0.2);
 	rgb color <- #green;
-	geometry shape <- circle(10);	
+
 	int category;
 	int price;
 

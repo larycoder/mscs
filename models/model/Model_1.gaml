@@ -47,6 +47,10 @@ global {
 			my_network <- network;
 			location <- any_location_in(one_of(my_open_area));
 		}
+		
+		create store_product number: nb_product {
+			location <- any_location_in(one_of(shelf));
+		}
 
 		ask pedestrian_path parallel: true {			
 			do build_intersection_areas pedestrian_graph: network;
@@ -61,6 +65,7 @@ experiment simple_product_shelf {
 			species pedestrian_path refresh: false;
 			species wall refresh: false;
 			species shelf;
+			species store_product;
 			species door;
 			species people aspect: advance;
 		}
