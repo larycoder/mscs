@@ -14,7 +14,7 @@ global {
 	geometry shape <- square(1000);
 }
 
-species Product {
+species store_product {
 	rgb color <- #green;
 	geometry shape <- circle(10);
 
@@ -25,12 +25,12 @@ species Product {
 
 experiment product_agent {
 	init {
-		create Product number: 10;
+		create store_product number: 10;
 	}
 	
 	output {
 		display product_agent {
-			species Product;
+			species store_product;
 		}
 	}
 }
