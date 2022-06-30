@@ -33,6 +33,8 @@ global {
 		create floors from: open_area_file;
 		create shelf from: shelves_shape_file;
 		create wall from: wall_shape_file;
+		create door from: door_in_shape_file { door_type <- DOOR_IN; }
+		create door from: door_out_shape_file { door_type <- DOOR_OUT; }
 	
 		create pedestrian_path from: pedestrian_paths_file {
 			list<geometry> fs <- free_spaces_shape_file overlapping self;
@@ -59,6 +61,7 @@ experiment simple_product_shelf {
 			species pedestrian_path refresh: false;
 			species wall refresh: false;
 			species shelf;
+			species door;
 			species people aspect: advance;
 		}
 	}

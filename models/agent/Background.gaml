@@ -16,8 +16,14 @@ global {
 	shape_file free_spaces_shape_file <- shape_file("../results/free spaces.shp");
 	shape_file shelves_shape_file <- shape_file("../results/shelves.shp");
 	shape_file wall_shape_file <- shape_file("../results/walls.shp");
+	shape_file door_in_shape_file <- shape_file("../results/doorin.shp");
+	shape_file door_out_shape_file <- shape_file("../results/doorout.shp");
 		
 	geometry shape <- envelope(open_area_file);
+	
+	// const
+	string DOOR_IN <- "door_in" const: true;
+	string DOOR_OUT <- "door_out" const: true;
 }
 
 species pedestrian_path skills: [pedestrian_road] {
@@ -42,7 +48,15 @@ species shelf {
 
 species wall {
 	aspect default {
-		draw shape color: #red border: #black;
+		draw shape color: #gray border: #black;
+	}
+}
+
+species door {
+	string door_type <- DOOR_IN;	
+	
+	aspect default {
+		draw shape color: door_type = DOOR_IN ? #green : #navy border: #black;
 	}
 }
 
@@ -52,6 +66,8 @@ experiment background {
 		create floors from: open_area_file;
 		create shelf from: shelves_shape_file;
 		create wall from: wall_shape_file;
+		create door from: door_in_shape_file { door_type <- DOOR_IN; }
+		create door from: door_out_shape_file { door_type <- DOOR_OUT; }
 	}
 	
 	output {
@@ -60,6 +76,7 @@ experiment background {
 			species pedestrian_path;
 			species wall;
 			species shelf;
+			species door;
 		}
 	}
 }
