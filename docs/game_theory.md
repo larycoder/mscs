@@ -51,12 +51,20 @@ Project
 		- Increase the staff quality
 		- Chose height of each product and price
 - Game rule:
+    - Each cycle will be 1 minute, one round is one day (from 8AM to 10PM).
+    - After each day the player can reconstruct the products by new stratery and continue the next round.
     - Their are about 15-20 products construct by csv with different price, some will link to eachother
-	
-	- Choose the stratergy
+	- If the happiness > 80%, they will invite thier friend in friend to the shop
+	- If the happiness < 20%, they will ask thier friend to not come to the shop
+	- Choose the stratergy [param]
     	- Choose [expensive, average, cheap] to the [high, eye, low] level
     	- Ramdomly place product
-	- Client have random_of_max_money or inf_money so their happiness depent on that when they saw the product on the shelf
+	- Client have random_of_max_money or inf_money so their happiness depent on that when they saw the product on the shelf [param]
+    	- The clients only buy when they see the product <= their money, and most close to them, if there are 2 same product (which sastisfy the price), take the closet
+    	- If the clients run out of patien time, they will leave and decrease the happiness [param]
+    	- If the cients buy the product, increase the happiness [param]
+    	- The happiness are more when the clients buy the product Eye-level > lower-level > top-level [param]
+    	- The buy_rate is increase by follow Eye-level > top-level > lower-level [param]
 - Game simulation
 	- Game event (random more number of ppl to the shop)
 	- Each month show the number of customer served + total sell product + profit
