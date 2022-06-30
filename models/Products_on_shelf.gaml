@@ -21,7 +21,9 @@ model Productsonshelf
 
 global {
 	shape_file free_spaces_shape_file <- shape_file("results/free spaces.shp");
-	file wall_shapefile <- file("results/shelves.shp");
+	file shelves_shapefile <- file("results/shelves.shp");
+	file wall_shapefile <- file("results/walls.shp");
+	
 	
 	
 	shape_file open_area_shape_file <- shape_file("results/open area.shp");
@@ -31,6 +33,8 @@ global {
 	graph network;
 	
 	geometry shape <- envelope(wall_shapefile);
+	
+	
 	
 	bool display_free_space <- false parameter: true;
 	bool display_force <- true parameter: true;
@@ -66,15 +70,37 @@ global {
 	
 	float step <- 0.1;
 	int nb_people <- 50;
-
+	int nb_product <- 15;
 	geometry open_area ;
 	
 	//social graph (not spatial) representing the friendship links between people
 	graph friendship_graph <- graph([]);
+	graph product_graph <- graph([]);
+	
+	file counter_shapefile <- file("results/counter.shp");
+	file doorIn_shapefile <- file("results/doorin.shp");
+	file doorOut_shapefile <- file("results/doorout.shp");
+	file floor_shapefile <- file("results/floor.shp");
+	
+	
+	geometry shape_counter <- envelope(counter_shapefile);
+	geometry shape_doorIn <- envelope(doorIn_shapefile);
+	geometry shape_doorOut <- envelope(doorOut_shapefile);
+	geometry shape_floor <- envelope(floor_shapefile);
+	geometry shape_wall <- envelope(wall_shapefile);
 	
 	init {
-		open_area <- first(open_area_shape_file.contents);
+		create counter from:counter_shapefile;
+		create doorIn from:doorIn_shapefile;
+		create doorOut from:doorOut_shapefile;
+		create floors from:open_area_shape_file {
+			shape <- open_area;
+		}
 		create wall from:wall_shapefile;
+		
+		open_area <- first(open_area_shape_file.contents);
+		create shelves from:shelves_shapefile;
+		
 		create pedestrian_path from: pedestrian_paths_shape_file {
 			list<geometry> fs <- free_spaces_shape_file overlapping self;
 			free_space <- fs first_with (each covers shape); 
@@ -98,7 +124,7 @@ global {
 			use_geometry_waypoint <- P_use_geometry_target;
 			tolerance_waypoint<- P_tolerance_target;
 			pedestrian_species <- [people];
-			obstacle_species<-[wall];
+			obstacle_species<-[ wall];
 			
 			pedestrian_model <- P_model_type;
 			
@@ -126,9 +152,24 @@ global {
 		loop times: nb_people*2 {
 			people p1 <- one_of(people);
 			people p2 <- one_of(list(people) - p1);
+			
 			create friendship_link  {
 				add edge (p1, p2, self) to: friendship_graph;
 				shape <- link(p1,p2);
+			}
+		}
+		
+		
+		create product_type number:nb_product{
+			
+		}
+		loop times: nb_product/2 {
+			product_type pr1 <- one_of(product_type);
+			product_type pr2 <- one_of(list(product_type) - pr1);
+			
+			create product_link  {
+				add edge (pr1, pr2, self) to: product_graph;
+				shape <- link(pr1,pr2);
 			}
 		}
 			
@@ -152,7 +193,14 @@ species pedestrian_path skills: [pedestrian_road]{
 	}
 }
 
+species shelves {
+	aspect default {
+		draw shape color:#pink;
+	}
+}
+
 species wall {
+	
 	geometry free_space;
 	float high <- rnd(10.0, 20.0);
 	
@@ -184,10 +232,10 @@ species people skills: [pedestrian] parallel: true{
 		
 		draw triangle(shoulder_length) color: color rotate: heading + 90.0;
 		
-		if false and current_waypoint != nil {
+		if true and current_waypoint != nil {
 			draw line([location,current_waypoint]) color: color;
 		}
-		if  false {
+		if  true {
 			loop op over: forces.keys {
 				if (species(agent(op)) = wall ) {
 					draw line([location, location + point(forces[op])]) color: #red end_arrow: 0.1;
@@ -211,18 +259,86 @@ species friendship_link parallel: true{
 	}
 }
 
+species product_type parallel: true {
+	int category;
+	
+	int price;
+	string PrType;
+//	location <- any_location_in (on_of(shelves)); // and in a grid overlay, avoid location where we already has other product
+//	int height one_of(["high", "eye", "low"]);
+	
+	aspect default {
+		draw shape color: #yellow;
+	}
+}
+species product_link parallel: true{
+	
+	aspect default {
+		draw shape color: #orange;
+	}
+}
+
+
+
+
+
+
+species counter {
+	aspect default {
+		draw shape color: rgb (128, 64, 3) border: #red;
+	}
+}
+
+species floors {
+	
+//	float capacity;
+	aspect default {
+		draw shape color:#pink;
+	}
+}
+
+species doorIn {
+	aspect default {
+		draw shape border:#black color:#green;
+	}
+}
+
+species doorOut {
+	aspect default {
+		draw shape color: #navy border: #black;
+	}
+}
+
+
+
 experiment normal_sim type: gui {
 	float minimum_cycle_duration <- 0.02;
 		output {
 		display map type: opengl{
+//			species floors aspect: default;
 			species wall refresh: false;
+			species shelves aspect: default;
+			
+			species counter aspect: default;
+			species doorIn aspect: default;
+			species doorOut aspect: default;
+			
 			species pedestrian_path aspect:free_area_aspect transparency: 0.5 ;
 			species pedestrian_path refresh: false;
 			species people;
+			
+			
+			
+			
 		}
 		display friendship type: opengl{
 			species friendship_link ;
 			species people;
+			
+			}
+		display product_type type: opengl{
+			species product_link ;
+			species product_type;
 			
 			}
 	}

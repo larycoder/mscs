@@ -12,10 +12,11 @@ model Modelutils9pedGeneration
 
 global {
 	
-	file wall_shapefile <- file("../results/shelves.shp");
+//	file wallss_shapefile <- file("../results/shelves.shp");
+	file wall_shapefile <- file("../results/walls.shp");
+//	wall_shapefile <- wall_shapefile +walls_shapefile;
+	geometry shape <- envelope(wall_shapefile);//+ envelope(wallss_shapefile);
 	
-	
-	geometry shape <- envelope(wall_shapefile);
 	bool display_free_space <- false parameter: true;
 	float P_shoulder_length <- 0.45 parameter: true;
 	
@@ -38,6 +39,9 @@ global {
 		create wall from:wall_shapefile {
 			open_area <- open_area -(shape buffer (P_shoulder_length/2.0));
 		}
+//		create wall from:walls_shapefile {
+//			open_area <- open_area -(shape buffer (P_shoulder_length/2.0));
+//		}
 		list<geometry> generated_lines <- generate_pedestrian_network([],[open_area],add_points_open_area,random_densification,min_dist_open_area,density_open_area,clean_network,tol_cliping,tol_triangulation,min_dist_obstacles_filtering,simplification_dist);
 		
 		create pedestrian_path from: generated_lines  {
@@ -49,7 +53,7 @@ global {
 	}
 }
 
-species pedestrian_path skills: [pedestrian_road]{
+species pedestrian_path skills: [pedestrian_road] parallel: true{
 	rgb color <- rnd_color(255);
 	aspect default {
 		draw shape  color: color;
@@ -61,7 +65,7 @@ species pedestrian_path skills: [pedestrian_road]{
 	}
 }
 
-species wall {
+species wall parallel: true {
 	aspect default {
 		draw shape + (P_shoulder_length/2.0) color: #gray border: #black;
 	}

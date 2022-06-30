@@ -20,7 +20,7 @@ global {
 	/*
 	 * Import the image to vectorize
 	 */
-	image_file image <- image_file("../includes/wall2.png");
+	image_file image <- image_file("../includes/walls.png");
 	
 	/*
 	 * Get the resolution of the image
@@ -47,7 +47,8 @@ global {
 		#blue::string(water),
 		#yellow::string(beach),
 		#green::string(tree),
-		#black::string(building)
+		#black::string(building),
+		#pink::string(wall)
 	];
 	
 	init {
@@ -114,18 +115,25 @@ global {
 					}
 					match string(building) {
 						create building from: geom.geometries;
+						create wall from: geom.geometries;
+					}
+					match string(wall) {
+						create wall from: geom.geometries;
 					}
 				}
 			}
 		}
 		write "END - TIME ELAPSE: "+((machine_time-t)/1000)+"sec";
-		
+//		ask first(reverse(wall)){
+//			do die;
+//		}
 		write "EXPORT TO FILES";
 		save water to:"../results/doorin.shp" type:shp;
 		save ground to:"../results/counter.shp" type:shp;
 		save beach to:"../results/floor.shp" type:shp;
 		save tree to:"../results/doorout.shp" type:shp;
 		save building to:"../results/shelves.shp" type:shp;
+		save wall to:"../results/walls.shp" type:shp;
 		
 	}
 	
@@ -164,14 +172,28 @@ species tree {
 	}
 }
 
+species wall {
+	aspect default {
+		draw shape color:#pink;
+	}
+}
+
 experiment Vectorize type: gui {
+//	parameter "Float (with on_change listener)" category:"Interactive" var: wall {write ""+wall;}
+	// A user_command adds a button to the interface in order to call an action or a set of statements when it is clicked.
+	user_command "Display parameter" category: "Interactive" color:#darkblue {save wall to:"../results/walls.shp" type:shp;}
+	
+	
 	output {
 		display map_vector type:opengl{
+			species wall;
 			species water;
 			species ground;
 			species beach;
 			species tree;
 			species building;
+			
+			
 		}
 		display image {
 			image image;
