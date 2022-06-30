@@ -13,7 +13,7 @@ model Background
 global {
 	shape_file pedestrian_paths_file <- shape_file("../results/pedestrian paths.shp");
 	shape_file open_area_file <- shape_file("../results/open area.shp");
-	shape_file free_spaces_shpae_file <- shape_file("../results/free spaces.shp");
+	shape_file free_spaces_shape_file <- shape_file("../results/free spaces.shp");
 	shape_file shelves_shape_file <- shape_file("../results/shelves.shp");
 	shape_file wall_shape_file <- shape_file("../results/walls.shp");
 		

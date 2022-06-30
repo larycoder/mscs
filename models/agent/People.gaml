@@ -14,6 +14,33 @@ import "Background.gaml"
 
 global {
 	geometry shape <- envelope(wall_shape_file);
+	
+	// pedestrian strategy parameters
+	float P_shoulder_length <- 0.45;
+	float P_proba_detour <- 0.5;
+	bool P_avoid_other <- true;
+	float P_obstacle_consideration_distance <- 3.0;
+	float P_pedestrian_consideration_distance <- 3.0;
+	float P_tolerance_target <- 0.1;
+	bool P_use_geometry_target <- true;
+	
+	string P_model_type <- "simple" among: ["simple", "advanced"] parameter: true; 
+
+	float P_A_pedestrian_SFM_advanced <- 0.16 category: "SFM advanced";
+	float P_A_obstacles_SFM_advanced <- 1.9 category: "SFM advanced";
+	float P_B_pedestrian_SFM_advanced <- 0.1 category: "SFM advanced";
+	float P_B_obstacles_SFM_advanced <- 1.0 category: "SFM advanced";
+	float P_relaxion_SFM_advanced  <- 0.5 category: "SFM advanced";
+	float P_gama_SFM_advanced <- 0.35 category: "SFM advanced";
+	float P_lambda_SFM_advanced <- 0.1 category: "SFM advanced";
+	float P_minimal_distance_advanced <- 0.25 category: "SFM advanced";
+	
+	float P_n_prime_SFM_simple <- 3.0 category: "SFM simple";
+	float P_n_SFM_simple <- 2.0 category: "SFM simple";
+	float P_lambda_SFM_simple <- 2.0 category: "SFM simple";
+	float P_gama_SFM_simple <- 0.35 category: "SFM simple";
+	float P_relaxion_SFM_simple <- 0.54 category: "SFM simple";
+	float P_A_pedestrian_SFM_simple <-4.5category: "SFM simple";
 }
 
 species people skills: [ pedestrian ] {
@@ -23,6 +50,36 @@ species people skills: [ pedestrian ] {
 	
 	geometry my_open_area <- nil;
 	graph my_network <- nil;
+	
+	init {
+		obstacle_consideration_distance <-P_obstacle_consideration_distance;
+		pedestrian_consideration_distance <-P_pedestrian_consideration_distance;
+		shoulder_length <- P_shoulder_length;
+		avoid_other <- P_avoid_other;
+		proba_detour <- P_proba_detour;
+		use_geometry_waypoint <- P_use_geometry_target;
+		tolerance_waypoint<- P_tolerance_target;
+		pedestrian_species <- [people];
+		obstacle_species<-[ wall];		
+		pedestrian_model <- P_model_type;	
+		if (pedestrian_model = "simple") {
+			A_pedestrians_SFM <- P_A_pedestrian_SFM_simple;
+			relaxion_SFM <- P_relaxion_SFM_simple;
+			gama_SFM <- P_gama_SFM_simple;
+			lambda_SFM <- P_lambda_SFM_simple;
+			n_prime_SFM <- P_n_prime_SFM_simple;
+			n_SFM <- P_n_SFM_simple;
+		} else {
+			A_pedestrians_SFM <- P_A_pedestrian_SFM_advanced;
+			A_obstacles_SFM <- P_A_obstacles_SFM_advanced;
+			B_pedestrians_SFM <- P_B_pedestrian_SFM_advanced;
+			B_obstacles_SFM <- P_B_obstacles_SFM_advanced;
+			relaxion_SFM <- P_relaxion_SFM_advanced;
+			gama_SFM <- P_gama_SFM_advanced;
+			lambda_SFM <- P_lambda_SFM_advanced;
+			minimal_distance <- P_minimal_distance_advanced;
+		}
+	}
 	
 	reflex move {
 		if (final_waypoint = nil) {
