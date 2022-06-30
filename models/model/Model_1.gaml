@@ -8,24 +8,46 @@
 
 model Model1
 
+import "../agent/Background.gaml"
 import "../agent/People.gaml"
-import "../agent/Shelf.gaml"
 import "../agent/Product.gaml"
 
 /* Insert your model definition here */
 
 global {
+	// store map
+	geometry shape <- envelope(wall_shape_file);
+	
+	// walking space
+	geometry open_area <- first(open_area_file.contents);
+	graph network;
+
 	// number of agents
-	int nb_shelf <- 10;
 	int nb_people <- 10;
 	int nb_product <- 10;
 	
+	// simulation setup
+	float step <- 0.1;
+	
 	init {
-		create Shelf number: nb_shelf {
-			deg <- one_of([0.0, 90.0]);
-			loop while: length((Shelf - self) where(each overlaps self)) > 0 {
-				location <- any_location_in(world.shape);
-			}
+		create floors from: open_area_file;
+		create shelf from: shelves_shape_file;
+		create wall from: wall_shape_file;
+	
+		create pedestrian_path from: pedestrian_paths_file {
+			list<geometry> fs <- free_spaces_shape_file overlapping self;
+			free_space <- fs first_with (each covers shape);
+		}
+		network <- as_edge_graph(pedestrian_path); // load walking network
+
+		create people number: nb_people {
+			my_open_area <- open_area;
+			my_network <- network;
+			location <- any_location_in(one_of(my_open_area));
+		}
+
+		ask pedestrian_path parallel: true {			
+			do build_intersection_areas pedestrian_graph: network;
 		}
 	}
 }
@@ -33,7 +55,11 @@ global {
 experiment simple_product_shelf {
 	output {
 		display simple_product_shelf {
-			species Shelf;
+			species floors;
+			species pedestrian_path refresh: false;
+			species wall refresh: false;
+			species shelf;
+			species people aspect: advance;
 		}
 	}
 }
