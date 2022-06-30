@@ -39,7 +39,7 @@ species floors {
 }
 
 species shelf {
-	rgb color <- #grey;
+	rgb color <- #brown;
 
 	aspect default {
 		draw shape color: color;

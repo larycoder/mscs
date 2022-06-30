@@ -16,7 +16,7 @@ global {
 
 species store_product {
 	geometry shape <- circle(0.2);
-	rgb color <- #green;
+	rgb color <- #yellow;
 
 	int category;
 	int price;
