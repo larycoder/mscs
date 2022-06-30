@@ -24,7 +24,7 @@ global {
 	float P_tolerance_target <- 0.1;
 	bool P_use_geometry_target <- true;
 	
-	string P_model_type <- "simple" among: ["simple", "advanced"] parameter: true; 
+	string P_model_type <- "simple" among: ["simple", "advanced"];
 
 	float P_A_pedestrian_SFM_advanced <- 0.16 category: "SFM advanced";
 	float P_A_obstacles_SFM_advanced <- 1.9 category: "SFM advanced";
