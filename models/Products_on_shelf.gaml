@@ -90,10 +90,17 @@ global {
 	geometry shape_wall <- envelope(wall_shapefile);
 	
 	//Time definition
-	float step <- 0.1 #second; 
+	float step <- 1 #second; 
 	
 	
-	float patienceTime <- 100 #second;
+	float patienceTime <- 20*60 #second;
+	
+	predicate need_shopping <- new_predicate(" have target product ");
+	predicate found_product <- new_predicate("found all target product");
+	predicate loose_patience <- new_predicate("cannot found target product");
+	predicate need_pay <- new_predicate ("picked some products");
+	predicate need_leave <- new_predicate ("leave");
+	predicate spread_rumors <- new_predicate ("recommend to friends");
 	
 	init {
 		create counter from:counter_shapefile;
@@ -233,11 +240,14 @@ species wall {
 
 species people skills: [pedestrian] parallel: true{
 	rgb color <- rnd_color(255);
-	float speed <- gauss(5,1.5) #km/#h min: 2 #km/#h;
+	float speed <- gauss(1,0.1) #km/#h min: 0.1 #km/#h;
 	
 	float patienceTime <- 30.0 #minute ; 
 	float walkinTime;
 	bool needShopping <- true;
+	
+	float view_dist<-5.0;
+	
 	
 	reflex move when: needShopping {
 		
@@ -257,6 +267,8 @@ species people skills: [pedestrian] parallel: true{
 		if display_circle_min_dist and minimal_distance > 0 {
 			draw circle(minimal_distance).contour color: color;
 		}
+		
+		draw circle(view_dist) color: color border: #black wireframe: true;
 		
 		draw triangle(shoulder_length) color: color rotate: heading + 90.0;
 		
@@ -284,6 +296,17 @@ species friendship_link parallel: true{
 	
 	aspect default {
 		draw shape color: #blue;
+	}
+}
+
+species socialLinkRepresentation{
+	people origin;
+//	agent destination;
+	float recommendation;
+	rgb my_color;
+	
+	aspect base{
+		draw line([origin,recommendation],50.0) color: my_color;
 	}
 }
 
