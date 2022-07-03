@@ -37,8 +37,8 @@ global {
 	
 	
 	bool display_free_space <- false parameter: true;
-	bool display_force <- true parameter: true;
-	bool display_target <- true parameter: true;
+	bool display_force <- false parameter: true;
+	bool display_target <- false parameter: true;
 	bool display_circle_min_dist <- true parameter: true;
 	
 	float P_shoulder_length <- 0.45 parameter: true;
@@ -68,7 +68,7 @@ global {
 	float P_relaxion_SFM_simple parameter: true <- 0.54 category: "SFM simple" ;
 	float P_A_pedestrian_SFM_simple parameter: true <-4.5category: "SFM simple" ;
 	
-	float step <- 0.1;
+//	float step <- 0.1;
 	int nb_people <- 50;
 	int nb_product <- 15;
 	geometry open_area ;
@@ -88,6 +88,12 @@ global {
 	geometry shape_doorOut <- envelope(doorOut_shapefile);
 	geometry shape_floor <- envelope(floor_shapefile);
 	geometry shape_wall <- envelope(wall_shapefile);
+	
+	//Time definition
+	float step <- 0.1 #second; 
+	
+	
+	float patienceTime <- 100 #second;
 	
 	init {
 		create counter from:counter_shapefile;
@@ -114,7 +120,12 @@ global {
 		}
 		
 		create people number:nb_people{
-			location <- any_location_in(one_of(open_area));
+//			location <- any_location_in(one_of(open_area));
+			location <- any_location_in(one_of(doorIn));
+//			write "patienceTime default " + patienceTime ;
+			patienceTime <- myself.patienceTime; 
+			walkinTime <- time;
+//			write "patienceTime " + myself.patienceTime + " " + patienceTime ;
 			obstacle_consideration_distance <-P_obstacle_consideration_distance;
 			pedestrian_consideration_distance <-P_pedestrian_consideration_distance;
 			shoulder_length <- P_shoulder_length;
@@ -179,6 +190,13 @@ global {
 		do pause;
 	}
 	
+	
+	reflex current_time {
+		write "Now is " + time/6; 
+		// Re-calculate shopping need here
+		
+	}
+	
 }
 
 species pedestrian_path skills: [pedestrian_road]{
@@ -216,12 +234,22 @@ species wall {
 species people skills: [pedestrian] parallel: true{
 	rgb color <- rnd_color(255);
 	float speed <- gauss(5,1.5) #km/#h min: 2 #km/#h;
-
-	reflex move  {
-		if (final_waypoint = nil) {
+	
+	float patienceTime <- 30.0 #minute ; 
+	float walkinTime;
+	bool needShopping <- true;
+	
+	reflex move when: needShopping {
+		
+		if (walkinTime !=nil and time > walkinTime +patienceTime){
+			do walk_to target: any_location_in(one_of(doorOut));
+		}else{
+			if (final_waypoint = nil) {
 			do compute_virtual_path pedestrian_graph:network target: any_location_in(open_area) ;
 		}
-		do walk ;
+			do walk ;
+		}
+		
 	}	
 	
 	aspect default {
@@ -232,10 +260,10 @@ species people skills: [pedestrian] parallel: true{
 		
 		draw triangle(shoulder_length) color: color rotate: heading + 90.0;
 		
-		if true and current_waypoint != nil {
+		if display_target and current_waypoint != nil {
 			draw line([location,current_waypoint]) color: color;
 		}
-		if  true {
+		if  display_force {
 			loop op over: forces.keys {
 				if (species(agent(op)) = wall ) {
 					draw line([location, location + point(forces[op])]) color: #red end_arrow: 0.1;
