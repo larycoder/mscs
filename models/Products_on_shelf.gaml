@@ -72,6 +72,7 @@ global {
 	int nb_people <- 50;
 	int nb_product <- 15;
 	geometry open_area ;
+	geometry free_space <- envelope(free_spaces_shape_file);
 	
 	//social graph (not spatial) representing the friendship links between people
 	graph friendship_graph <- graph([]);
@@ -93,9 +94,9 @@ global {
 	float step <- 1 #second; 
 	
 	
-	float patienceTime <- 20*60 #second;
+	float patienceTime <- 20*15 #second;
 	
-	predicate need_shopping <- new_predicate(" have target product ");
+	predicate shopping <- new_predicate(" have target product ");
 	predicate found_product <- new_predicate("found all target product");
 	predicate loose_patience <- new_predicate("cannot found target product");
 	predicate need_pay <- new_predicate ("picked some products");
@@ -117,6 +118,7 @@ global {
 		create pedestrian_path from: pedestrian_paths_shape_file {
 			list<geometry> fs <- free_spaces_shape_file overlapping self;
 			free_space <- fs first_with (each covers shape); 
+			
 		}
 		
 
@@ -126,7 +128,7 @@ global {
 			do build_intersection_areas pedestrian_graph: network;
 		}
 		
-		create people number:nb_people{
+		create people number:nb_people {
 //			location <- any_location_in(one_of(open_area));
 			location <- any_location_in(one_of(doorIn));
 //			write "patienceTime default " + patienceTime ;
@@ -238,21 +240,67 @@ species wall {
 	}
 }
 
-species people skills: [pedestrian] parallel: true{
+species people skills: [pedestrian] parallel: true control:simple_bdi{
 	rgb color <- rnd_color(255);
 	float speed <- gauss(1,0.1) #km/#h min: 0.1 #km/#h;
 	
 	float patienceTime <- 30.0 #minute ; 
 	float walkinTime;
 	bool needShopping <- true;
+	list<string> productList <- ["toothpaste", "noodle"];
+//	list<string> my_names <- my_agents collect each.name;
+	list<string> boughtList <- [];
 	
-	float view_dist<-5.0;
+	string current_status;
+	float view_dist<-2.0;
+	init{
+		do add_desire(shopping);
+	}
+	reflex update {
+		do status;
+		switch current_status{
+			match needShopping {
+				do add_desire(shopping);
+			}
+		}
+	}
+	
+	action status {
+		
+	}
+	
+//	predicate shopping <- new_predicate(" have target product ");
+//	predicate found_product <- new_predicate("found all target product");
+//	predicate loose_patience <- new_predicate("cannot found target product");
+//	predicate need_pay <- new_predicate ("picked some products");
+//	predicate need_leave <- new_predicate ("leave");
+//	predicate spread_rumors <- new_predicate ("recommend to friends");
 	
 	
-	reflex move when: needShopping {
+	perceive target: shelves  in:view_dist {
+//		ask myself {
+//		//collect the product
+//		//update score
+//		
+//		}
+		
+		
+	}
+	
+	plan lets_wander intention:shopping finished_when: has_desire(found_product) or has_desire (loose_patience){
+		do moveAround;
+	} 
+	
+	
+//	reflex move when: needShopping {
+	action moveAround {
 		
 		if (walkinTime !=nil and time > walkinTime +patienceTime){
-			do walk_to target: any_location_in(one_of(doorOut));
+			if (final_waypoint = nil) {
+			do compute_virtual_path pedestrian_graph:network target: any_location_in(one_of(doorOut)) ;
+		}
+			do walk ;
+		
 		}else{
 			if (final_waypoint = nil) {
 			do compute_virtual_path pedestrian_graph:network target: any_location_in(open_area) ;
@@ -261,6 +309,7 @@ species people skills: [pedestrian] parallel: true{
 		}
 		
 	}	
+	
 	
 	aspect default {
 		
