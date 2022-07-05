@@ -291,6 +291,29 @@ species people skills: [pedestrian] parallel: true control:simple_bdi{
 		do moveAround;
 	} 
 	
+	plan get_product intention:found_product {
+		//find all products in list
+		// if found all change do add_belief(found_product);
+		  
+	}
+	
+	plan leave intention: need_leave {
+		// if run out of patience time do add_belief(loose_patience);
+			// out of patience and bought some products do add_belief(need_pay);
+			// out of patience and bought do add_belief(need_leave);
+	}
+	
+	plan pay intention: need_pay {
+		// if run out of patience time do add_belief(loose_patience);
+			// out of patience and bought some products do add_belief(need_pay);
+			// out of patience and bought do add_belief(need_leave);
+	}
+	
+	plan keepPatience intention: loose_patience {
+		// if run out of patience time do add_belief(loose_patience);
+			// out of patience and bought some products do add_belief(need_pay);
+			// out of patience and bought do add_belief(need_leave);
+	}
 	
 //	reflex move when: needShopping {
 	action moveAround {
