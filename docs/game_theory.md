@@ -66,6 +66,7 @@
     - Choose the stratergy [param]
         - Choose [expensive, average, cheap] to the [high, eye, low] level
         - Ramdomly place product
+
     - Client have random_of_max_money or inf_money so their happiness depent on that when they saw the product on the shelf [param]
         - The clients only buy when they see the product <= their money, and most close to them, if there are 2 same product (which sastisfy the price), take the closet
         - If the clients run out of patien time, they will leave and decrease the happiness [param]
