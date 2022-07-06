@@ -58,7 +58,7 @@
 ## Game rule:
     - Each cycle will be 1 minute, one round is one day (from 8AM to 10PM).
     - After each day the player can reconstruct the products by new stratery and continue the next round.
-    - Their are about 15-20 products construct by csv with different price, some will link to eachother
+    - Their are about 15-20 products construct by csv with different price, some will link to each other
     - If the happiness > 80%, they will invite thier friend in friend to the shop
 
     - If the happiness < 20%, they will ask thier friend to not come to the shop
