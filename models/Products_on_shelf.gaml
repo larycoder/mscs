@@ -18,8 +18,29 @@ global {
         	location <- any_location_in(world);
         }
     }
+    action activate_button{
+		button b <- first(button overlapping #user_location);
+		if b != nil{
+			if b.btn_action = chosen_btn_action {
+				chosen_btn_action <- "";
+			}
+			else {
+				chosen_btn_action <- b.btn_action;
+			}
+		}
+	} 
 }
 
+species button {
+	rgb color;
+	geometry shape <- square(200);
+	string btn_action;
+	
+	aspect default {
+		draw shape color: color;
+		draw around(10.0,shape) color: #red;
+	}
+}
 species products{
 	int id;
 	string name;
@@ -34,6 +55,9 @@ experiment test{
 	output{
 		display del{
 			species products aspect: default;
+		}
+		display game_section{
+			
 		}
 	}
 }
