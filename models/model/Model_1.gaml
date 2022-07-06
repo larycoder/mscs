@@ -23,7 +23,7 @@ global {
 	graph network;
 
 	// number of agents
-	int nb_people <- 50;
+	int nb_people <- 5;
 	int nb_product <- 10;
 	
 	// simulation setup
@@ -41,16 +41,17 @@ global {
 			free_space <- fs first_with (each covers shape);
 		}
 		network <- as_edge_graph(pedestrian_path); // load walking network
+		
+		create store_product from: product_data_file {
+			location <- any_location_in(one_of(shelf));
+		}
 
 		create people number: nb_people {
 			my_open_area <- open_area;
 			my_network <- network;
 			my_doorOut <- one_of(door where(each.door_type = DOOR_OUT));
 			location <- any_location_in(one_of(my_open_area));
-		}
-		
-		create store_product from: product_data_file {
-			location <- any_location_in(one_of(shelf));
+			target_product_name <- one_of(store_product).name;
 		}
 
 		ask pedestrian_path parallel: true {			
@@ -70,5 +71,7 @@ experiment simple_product_shelf {
 			species door;
 			species people aspect: advance;
 		}
+		
+		monitor revenue value: revenue;
 	}
 }

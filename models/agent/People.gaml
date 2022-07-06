@@ -9,6 +9,7 @@
 model People
 
 import "Background.gaml"
+import "Product.gaml"
 
 /* Insert your model definition here */
 
@@ -69,8 +70,12 @@ species people skills: [ pedestrian ] control: simple_bdi {
 	// shopping attribute
 	float walkinTime;
 	float patience_time <- 300 #second;
-	float view_dist <- 2.0;
+	float view_dist <- 3.0;
 	bool current_status;
+	
+	// buying activity
+	string target_product_name <- nil;
+	int money <- rnd(1, 5);
 
 	bool need_shopping <- true;
 	
@@ -106,7 +111,7 @@ species people skills: [ pedestrian ] control: simple_bdi {
 		do add_desire(shopping);
 	}
 	
-	plan get_product intention:found_product {}
+	plan get_product intention: found_product {}
 	plan leave intention: need_leave {}
 	plan pay intention: need_pay {}
 	plan keepPatience intention: loose_patience {}
@@ -114,7 +119,15 @@ species people skills: [ pedestrian ] control: simple_bdi {
 		do moveAround;
 	}
 	
-	perceive target: shelf in: view_dist {}
+	perceive target: store_product in: view_dist {
+		if name = myself.target_product_name {
+			// TODO: buy
+			revenue <- revenue + self.price;
+			ask myself {
+				target_product_name <- nil;
+			}
+		}
+	}
 	
 	action moveAround {
 		if (walkinTime != nil and time > walkinTime + patience_time) {

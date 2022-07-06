@@ -24,6 +24,9 @@ global {
 	// const
 	string DOOR_IN <- "door_in" const: true;
 	string DOOR_OUT <- "door_out" const: true;
+	
+	// store owner
+	int revenue <- 0;
 }
 
 species pedestrian_path skills: [pedestrian_road] {
