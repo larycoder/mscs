@@ -11,15 +11,19 @@ model Product
 /* Insert your model definition here */
 
 global {
+	file product_data_file <- csv_file("../includes/product.csv", ",", string, true);
 	geometry shape <- square(50);
 }
 
 species store_product {
 	geometry shape <- circle(0.2);
 	rgb color <- #yellow;
-
-	int category;
+	
+	int id;
+	string name;
+	string price_type;
 	int price;
+	int linked_id;
 
 	aspect default {
 		draw shape color: color;
@@ -28,7 +32,9 @@ species store_product {
 
 experiment product_agent {
 	init {
-		create store_product number: 10;
+		create store_product from: product_data_file {
+			location <- any_location_in(world);
+		}
 	}
 	
 	output {

@@ -30,6 +30,13 @@ species pedestrian_path skills: [pedestrian_road] {
 	aspect default { 
 		draw shape  color: #black;
 	}
+	
+	aspect free_area_aspect {
+		if(free_space != nil) {
+			draw free_space color: #lightpink border: #black;
+		}
+		
+	}
 }
 
 species floors {

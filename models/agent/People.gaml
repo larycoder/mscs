@@ -41,12 +41,16 @@ global {
 	float P_gama_SFM_simple <- 0.35 category: "SFM simple";
 	float P_relaxion_SFM_simple <- 0.54 category: "SFM simple";
 	float P_A_pedestrian_SFM_simple <-4.5category: "SFM simple";
+	
+	// display option
+	bool display_target <- false;
+	bool display_force <- false;
 }
 
-species people skills: [ pedestrian ] {
+species people skills: [ pedestrian ] control: simple_bdi {
 	rgb color <- #blue;
 	geometry shape <- circle(10);
-	float speed <- gauss(5, 1.5)#km/#h min: 2#km/#h;
+	float speed <- gauss(1, 0.1) #km/#h min: 0.1 #km/#h;
 	
 	geometry my_open_area <- nil;
 	graph my_network <- nil;
@@ -97,21 +101,23 @@ species people skills: [ pedestrian ] {
 			draw circle(minimal_distance).contour color: color;
 		}
 		
+		//draw circle(view_dist) color: color border: #black wireframe: true;
 		draw triangle(shoulder_length) color: color rotate: heading + 90.0;
 		
-		if current_waypoint != nil {
+		if display_target and current_waypoint != nil {
 			draw line([location,current_waypoint]) color: color;
 		}
 		
-		loop op over: forces.keys {
-			if (species(agent(op)) = wall) {
-				draw line([location, location + point(forces[op])]) color: #red end_arrow: 0.1;
-			} else if ((agent(op)) = self) {
-				draw line([location, location + point(forces[op])]) color: #blue end_arrow: 0.1;
-			} else {
-				draw line([location, location + point(forces[op])]) color: #green end_arrow: 0.1;
+		if display_force {
+			loop op over: forces.keys {
+				if (species(agent(op)) = wall) {
+					draw line([location, location + point(forces[op])]) color: #red end_arrow: 0.1;
+				} else if ((agent(op)) = self) {
+					draw line([location, location + point(forces[op])]) color: #blue end_arrow: 0.1;
+				} else {
+					draw line([location, location + point(forces[op])]) color: #green end_arrow: 0.1;
+				}
 			}
-
 		}
 	}
 }
