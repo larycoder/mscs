@@ -150,7 +150,7 @@ species people skills: [ pedestrian ] control: simple_bdi {
 			draw circle(minimal_distance).contour color: color;
 		}
 		
-		//draw circle(view_dist) color: color border: #black wireframe: true;
+		draw circle(view_dist) color: color border: #black wireframe: true;
 		draw triangle(shoulder_length) color: color rotate: heading + 90.0;
 		
 		if display_target and current_waypoint != nil {
