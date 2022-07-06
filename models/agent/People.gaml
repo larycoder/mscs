@@ -45,15 +45,34 @@ global {
 	// display option
 	bool display_target <- false;
 	bool display_force <- false;
+	
+	// person predicate
+	predicate shopping <- new_predicate(" have target product ");
+	predicate found_product <- new_predicate("found all target product");
+	predicate loose_patience <- new_predicate("cannot found target product");
+	predicate need_pay <- new_predicate ("picked some products");
+	predicate need_leave <- new_predicate ("leave");
+	predicate spread_rumors <- new_predicate ("recommend to friends");
 }
 
 species people skills: [ pedestrian ] control: simple_bdi {
+	// person attribute parameter
 	rgb color <- #blue;
 	geometry shape <- circle(10);
 	float speed <- gauss(1, 0.1) #km/#h min: 0.1 #km/#h;
 	
+	// store parameter
 	geometry my_open_area <- nil;
 	graph my_network <- nil;
+	door my_doorOut <- nil;
+	
+	// shopping attribute
+	float walkinTime;
+	float patience_time <- 300 #second;
+	float view_dist <- 2.0;
+	bool current_status;
+
+	bool need_shopping <- true;
 	
 	init {
 		obstacle_consideration_distance <-P_obstacle_consideration_distance;
@@ -83,13 +102,43 @@ species people skills: [ pedestrian ] control: simple_bdi {
 			lambda_SFM <- P_lambda_SFM_advanced;
 			minimal_distance <- P_minimal_distance_advanced;
 		}
+		
+		do add_desire(shopping);
 	}
 	
-	reflex move {
-		if (final_waypoint = nil) {
-			do compute_virtual_path pedestrian_graph: my_network target: any_location_in(my_open_area);
+	plan get_product intention:found_product {}
+	plan leave intention: need_leave {}
+	plan pay intention: need_pay {}
+	plan keepPatience intention: loose_patience {}
+	plan lets_wander intention:shopping finished_when: has_desire(found_product) or has_desire (loose_patience){
+		do moveAround;
+	}
+	
+	perceive target: shelf in: view_dist {}
+	
+	action moveAround {
+		if (walkinTime != nil and time > walkinTime + patience_time) {
+			if (final_waypoint = nil) {
+				do compute_virtual_path pedestrian_graph: my_network target: any_location_in(one_of(my_doorOut));
+			}
+			do walk;
+		} else {
+			if (final_waypoint = nil) {
+				do compute_virtual_path pedestrian_graph: my_network target: any_location_in(my_open_area);
+			}
+			do walk;
 		}
-		do walk;
+	}
+	
+	action status {}
+	
+	reflex update {
+		do status;
+		switch current_status {
+			match need_shopping {
+				do add_desire(shopping);
+			}
+		}
 	}
 
 	aspect default {

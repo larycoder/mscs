@@ -23,7 +23,7 @@ global {
 	graph network;
 
 	// number of agents
-	int nb_people <- 10;
+	int nb_people <- 50;
 	int nb_product <- 10;
 	
 	// simulation setup
@@ -45,10 +45,11 @@ global {
 		create people number: nb_people {
 			my_open_area <- open_area;
 			my_network <- network;
+			my_doorOut <- one_of(door where(each.door_type = DOOR_OUT));
 			location <- any_location_in(one_of(my_open_area));
 		}
 		
-		create store_product number: nb_product {
+		create store_product from: product_data_file {
 			location <- any_location_in(one_of(shelf));
 		}
 
