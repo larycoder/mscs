@@ -32,6 +32,7 @@ global {
 	init {
 		create floors from: open_area_file;
 		create shelf from: shelves_shape_file;
+		create counter from: counter_shape_file;
 		create wall from: wall_shape_file;
 		create door from: door_in_shape_file { door_type <- DOOR_IN; }
 		create door from: door_out_shape_file { door_type <- DOOR_OUT; }
@@ -66,6 +67,7 @@ experiment simple_product_shelf {
 			species floors;
 			species pedestrian_path refresh: false;
 			species wall refresh: false;
+			species counter refresh: false;
 			species shelf;
 			species store_product;
 			species door;
