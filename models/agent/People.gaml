@@ -68,8 +68,8 @@ species people skills: [ pedestrian ] control: simple_bdi {
 	door my_doorOut <- nil;
 	
 	// shopping attribute
-	float walkinTime;
-	float patience_time <- 300 #second;
+	float walkinTime <- 0.0;
+	float patience_time <- 24 #hour;
 	float view_dist <- 3.0;
 	bool current_status;
 	
@@ -121,7 +121,6 @@ species people skills: [ pedestrian ] control: simple_bdi {
 	
 	perceive target: store_product in: view_dist {
 		if name = myself.target_product_name {
-			// TODO: buy
 			revenue <- revenue + self.price;
 			ask myself {
 				target_product_name <- nil;

@@ -50,7 +50,7 @@ global {
 			my_open_area <- open_area;
 			my_network <- network;
 			my_doorOut <- one_of(door where(each.door_type = DOOR_OUT));
-			location <- any_location_in(one_of(my_open_area));
+			location <- any_location_in(one_of(door where(each.door_type = DOOR_IN)));
 			target_product_name <- one_of(store_product).name;
 		}
 
