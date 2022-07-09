@@ -11,33 +11,72 @@ model Productsonshelf
 /* Insert your model definition here */
 
 global {
-	string ACTION_HOME <- "home" const: true;
-	string ACTION_WORK <- "work" const: true;
-	string ACTION_KILL <- "kill" const: true;
-	string ACTION_ADD_LIST <- "add_list" const: true;
-	string ACTION_CREATE_ALL_BUILDING <- "create_all_building" const: true;
-	string ACTION_KILL_ALL_HOUSE <- "kill_all_house" const:true;
-	string ACTION_KILL_ALL_WORK_PLACE <- "kill_all_work_place" const:true;
-	string ACTION_KILL_ALL_BUILDING <- "kill_all_bulding" const:true;
     file my_file <- csv_file("./includes/product.csv",',',string,true);
+    map stratergy_selection;
+    bool end_of_round <- true;
+    int current_round <- 1;
+    int current_score <- 100;
+    int total_came_client <- 1000;
+    int total_served_client <- 600;
+    int total_revenue <- 330;
+    int current_round_came_client <- 0;
+    int current_round_served_client <- 0;
+    int current_round_revenue <- 0;
+    bool ready <- false;
 	init {
         create products from: my_file{
         	location <- any_location_in(world);
         }
-        do create_button(#grey,ACTION_HOME,{400.0,200.0});
-		do create_button(#darkblue,ACTION_WORK,{400.0,600.0});
+        ready <- user_confirm("Situation",
+        							"You are the new manager of this store,the last manager was fired because the revenue of the shop was too low and and the consequence is the shop almost being closed. As a manager, it is your job to maximize the income for the shop and make it greate again.\nIn this game, your work to optimize the revenue is find a way to sort the product on the shelf in a proper way.");
+		do quit_game(ready);
+		ready <- user_confirm("Notification","It's your first month, learn some job");
+		do quit_game(ready);
+        stratergy_selection <- user_input_dialog("Choose the strategy",[
+									choose("High-level",string,"cheap", ["expensive","medium","cheap"]),
+									choose("Eye-level",string,"expensive", ["expensive","medium","cheap"]),
+									choose("Low-level",string,"medium", ["expensive","medium","cheap"])
+								]);
+//        do create_button(#grey,{50.0,50.0});
+//		do create_button(#darkblue,{50.0,80.0,0});
+//		create button {
+//			color <- #red;
+//			location <- any_location_in(world.shape);
+//		}
+		world.shape <- world.shape * 5;
+		write(world.shape);
     }
-    action activate_button{
+//    action activate_button{
 //		button b <- first(button overlapping #user_location);
 //		if b != nil{
 //			do die;
 //		}
+//	} 
+//	action create_button (rgb c, geometry loc) {
+//		create button {
+//			color <- c;
+//			location <- loc;
+//		}
+//	}
+	action quit_game(bool ready){
+		if (not ready){
+			do die;
+		}
 	} 
-	action create_button (rgb color, string btn_action, geometry loc) {
-		create button {
-			color <- color;
-			btn_action <- btn_action;
-			location <- loc;
+	reflex choose_strategy when: false {
+		stratergy_selection <- user_input_dialog("Choose the strategy",[
+									choose("High-level",string,"cheap", ["expensive","medium","cheap"]),
+									choose("Eye-level",string,"expensive", ["expensive","medium","cheap"]),
+									choose("Low-level",string,"medium", ["expensive","medium","cheap"])
+								]
+		);
+	}
+	reflex update_round{
+		if(current_round < 12){
+			current_round <- current_round + 1;
+		}
+		else {
+			do pause;
 		}
 	}
 }
@@ -45,11 +84,10 @@ global {
 species button {
 	rgb color;
 	geometry shape <- square(20);
-	string btn_action;
 	
 	aspect default {
 		draw shape color: color;
-		draw around(10.0,shape) color: #red;
+		draw around(1,shape) color: #red;
 	}
 }
 species products{
@@ -62,14 +100,35 @@ species products{
 		draw circle(5) color: #red;
 	}
 }
+grid my_frame width: 100 height:100{
+	
+}
 experiment test type:gui{
 	output{
-		display user_panel{
-			species button;
-//			event mouse_down action: activate_button;
-		}
-		display del{
-			species products aspect: default;
+		display main_stage {
+			
+			graphics "Stats"{
+				draw "Round: "+current_round+"/12" at: {0,50} color: #red;
+				draw "High-level: "+ string(stratergy_selection at "High-level") at: {20,70} color: #red;
+				draw "Eye-level: "+ string(stratergy_selection at "Eye-level") at: {20,80} color: #red;
+				draw "Low-level: "+ string(stratergy_selection at "Low-level") at: {20,90} color: #red;
+				
+				draw "Current round status" at: {0,140} color: #red;
+				draw "Came client: "+ current_round_came_client at: {20,160} color: #red;
+				draw "Served client: "+ current_round_served_client at: {20,170} color: #red;
+				draw "Revenue: "+ current_round_revenue at: {20,180} color: #red;
+				
+				draw "Score: "+ current_score at: {300,50} color: #black;
+			}
+			chart "Total status" type:histogram 
+									position: {250, 80}
+									size: {0.5,0.4}
+									x_label:''
+			 						y_label:'' {
+					data "Total came client" value: total_came_client color:#blue;
+					data "Total served client" value: total_served_client color:#yellow;
+					data "Total revenue" value: total_revenue/1000 color:#grey;
+				}
 		}
 	}
 }
