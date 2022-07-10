@@ -178,6 +178,7 @@ global {
 			}
 		}
 		
+
 		int need_shopping <- int(abs(first_customers_rate*nb_people));
 		loop times: need_shopping {
 			
@@ -185,6 +186,7 @@ global {
 		}
 		
 		loop times: nb_people*2 {
+
 			people p1 <- one_of(people);
 			people p2 <- one_of(list(people) - p1);
 			
