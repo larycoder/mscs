@@ -133,6 +133,26 @@ global {
 			do build_intersection_areas pedestrian_graph: network;
 		}
 		
+		create product_type from: product_data_file {
+			location <- any_location_in(one_of(shelves));
+
+			// recompute location to avoid overlapping
+			loop while: not empty((product_type - self) at_distance 3) {
+				location <- any_location_in(one_of(shelves));
+			}
+		}
+
+		// create product link
+		loop times: nb_product/2 {
+			product_type pr1 <- one_of(product_type);
+			product_type pr2 <- one_of(list(product_type) - pr1);
+			
+			create product_link  {
+				add edge (pr1, pr2, self) to: product_graph;
+				shape <- link(pr1,pr2);
+			}
+		}
+		
 		create people number:nb_people {
 //			location <- any_location_in(one_of(open_area));
 			location <- any_location_in(one_of(doorIn));
@@ -191,26 +211,6 @@ global {
 			create friendship_link  {
 				add edge (p1, p2, self) to: friendship_graph;
 				shape <- link(p1.friend_map,p2.friend_map);
-			}
-		}
-	
-		create product_type from: product_data_file {
-			location <- any_location_in(one_of(shelves));
-
-			// recompute location to avoid overlapping
-			loop while: not empty((product_type - self) at_distance 3) {
-				location <- any_location_in(one_of(shelves));
-			}
-		}
-
-		// create product link
-		loop times: nb_product/2 {
-			product_type pr1 <- one_of(product_type);
-			product_type pr2 <- one_of(list(product_type) - pr1);
-			
-			create product_link  {
-				add edge (pr1, pr2, self) to: product_graph;
-				shape <- link(pr1,pr2);
 			}
 		}
 	}
@@ -285,9 +285,7 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 	float payment_time <- 0;
 	
 	bool need_product <- false;
-	list<string> productList <- ["toothpaste", "noodle"];
-
-
+	list<product_type> productList <- rnd(1, length(product_type)) among product_type;
 
 	list<string> boughtList <- [];
 	list<string> foundList <- [];
@@ -310,7 +308,7 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 	
 	init{
 		friends <- list<people>(friendship_graph neighbors_of (self));
-		
+		write "Product: " + productList;
 	}
 	
 	action re_init {
@@ -372,9 +370,8 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 		comeback_rate <- (int(need_product) + opinion + happiness)/3;
 //		write "comeback_rate " + comeback_rate;
 		if  (comeback_rate >= comeback_rate_threshold) {
-			
 			need_product <- true;
-			//TODO Hiep: randomize product list
+			productList <- rnd(1, length(product_type)) among product_type;
 			shopperCounts <- shopperCounts +1;
 			
 			do add_desire(shopping);
