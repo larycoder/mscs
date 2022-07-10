@@ -278,7 +278,7 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 	list<people> friends;
 	float converge <- rnd(0.0,1.0);
 	float rumor_threshold <-0.2;	
-	float opinion <- 0.0;
+	float opinion <- rnd(0.0,1.0);
 	
 	init{
 		friends <- list<people>(friendship_graph neighbors_of (self));
@@ -645,9 +645,9 @@ experiment normal_sim type: gui {
 			species product_link ;
 			species product_type;
 			}
-		display graph {
-			chart "Reputation in Population" type: series {
-			loop ag over: people {
+		display reputation_graph refresh: every(daily#cycle) { //refresh reputation graph daily
+			chart "Reputation in Population" type: series  {
+			loop ag over: people  {
 				data ag.name value: ag.opinion color: #blue;
 		}
 		}
