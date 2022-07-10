@@ -90,7 +90,7 @@ global {
  	
  	float first_customers_rate <- 0.1 ; // 10% of population
 	
-	float patienceTime_global <- 100 #cycle;// 5.0 #minute ; 
+//	float patienceTime_global <- 100 #cycle;// 5.0 #minute ; 
 	string prod_at_location <- "prod_at_location";
 	string reject_prod_location <- "reject_prod_location";
 	
@@ -104,6 +104,7 @@ global {
 	predicate found_product <- new_predicate("found one target product");
 	predicate found_all_product <- new_predicate("found all target product");
 	
+	predicate loose_patience <- new_predicate("loose patience"); 
 	predicate loose_patience_pay <- new_predicate("found some target product"); 
 	predicate loose_patience_empty <- new_predicate("cannot found target product");
 	
@@ -138,7 +139,7 @@ global {
 //			location <- any_location_in(one_of(open_area));
 			location <- any_location_in(one_of(doorIn));
 //			write "patienceTime default " + patienceTime ;
-			patienceTime <- myself.patienceTime_global; 
+//			patienceTime <- myself.patienceTime_global; 
 			
 //			write "patienceTime " + myself.patienceTime + " " + patienceTime ;
 			obstacle_consideration_distance <-P_obstacle_consideration_distance;
@@ -217,7 +218,7 @@ global {
 	}
 	
 	// TODO: more specific pause condition
-	reflex stop when: every(daily#cycle) or shopperCounts = 0{ // empty(people) or (shopperCounts =0)  {
+	reflex stop when: every(daily#cycle){ // empty(people) or (shopperCounts =0)  {
 		
 		if (numberOfDays+1 >1){
 		ask people{
@@ -325,6 +326,11 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 		comeback_rate_threshold <- 0.7; // assume that first happiness > 0.5
 //		do add_desire(travel_to_shop);
 		target <- nil;
+		happiness <-0;
+		ask self {
+			location <- any_location_in(one_of(doorIn));
+		}
+		
 	}
 	
 //	reflex update {
@@ -347,7 +353,7 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 	 * agents and itself). The agent can perceive other agents up 
 	 * to a fixed distance or inside a specific geometry.
 	 */
-	perceive target: product_type where(!(each.location in checkProd) and keepPatience) in: view_dist parallel: true {
+	perceive target: product_type where(!(each.location in checkProd)) in: view_dist parallel: true {
 //	write "self.name " + self.name;
 //	write "myself.productList " + myself.productList;
 	if (self.name in myself.productList){
@@ -370,7 +376,7 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 	rule belief: found_product new_desire: shopping strength: 5;
 	rule belief: found_all_product new_desire: need_pay strength: 3;
 //	rule belief: loose_patience_pay new_desire: need_pay strength: 6;
-	rule belief: loose_patience_empty new_desire: need_leave strength: 1;
+//	rule belief: loose_patience_empty new_desire: need_leave strength: 1;
 	
 	reflex comeback when: every(daily#cycle){
 //		write "run comeback " +opinion;
@@ -392,7 +398,7 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 
 	}
 	// The current intention will determine the selected planThe current intention will determine the selected plan
-	plan lets_wander intention:shopping finished_when: has_desire(found_all_product){
+	plan lets_wander intention:shopping finished_when: has_desire(found_all_product) or has_desire(loose_patience){
 		movePath <- any_location_in(open_area);
 		do moveAround;
 	} 
@@ -470,20 +476,22 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 		target <- any_location_in(one_of(doorOut));
 		write "door OUT";
 		do goto target: target ;
-		
-		if (target = location)  {
-			target <- any_location_in(one_of(doorIn));
-			do goto target: target ; // back to the population
-			write "back to population";
-			shopperCounts <- shopperCounts -1;
-		}
-		
-		
+		shopperCounts <- shopperCounts -1;
+//		if (target = location)  {
+//			target <- any_location_in(one_of(doorIn));
+//			do goto target: target ; // back to the population
+//			write "back to population";
+//			shopperCounts <- shopperCounts -1;
+//		}
 	}
 	
 	plan pay intention: need_pay {
 //		write" pay " + target;
 		
+		do remove_belief(found_product);
+		do remove_belief(found_all_product);
+		do remove_belief (shopping);
+			
 		target <- any_location_in(one_of(counter));
 		write"pay target " + target ;
 		do goto target: target ;
@@ -491,16 +499,14 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 		do moveAround;
 		if (location  distance_to target)<=1  {
 			counting_time <- cycle;
-			do remove_belief(found_product);
-			do remove_belief(found_all_product);
-			do remove_belief (shopping);
+			
 			write "return_to_base remove_belief(found_product) ";
 //			do remove_intention(need_pay, true);
 			
 			//TODO Hiep Optional: add value price to sale number
 			//TODO: stand and waiting for payment speed
 			// payment_time = 
-			
+			write "paid";
 		}
 		payment_time <- counting_time +length(boughtList)*10; //cycle
 		if cycle >= payment_time {
@@ -511,57 +517,60 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 		
 	}
 	
-	reflex search_time {
-		searching_time <- walkinTime +patienceTime;
-		
-		if (time > searching_time) and keepPatience{
-			write "searching_time " + searching_time;
-			keepPatience <- false;
-//			do add_belief(loose_patience);
+//	reflex search_time {
+//		searching_time <- walkinTime +patienceTime;
+//		
+//		if (time > searching_time) and keepPatience{
+//			write "searching_time " + searching_time;
+//			keepPatience <- false;
+//			do add_desire(loose_patience);
 
 //			do remove_belief(shopping);
 //			do remove_belief(found_product);
 //			do remove_belief(found_all_product);
 			
-			write "loose_patience";
-			if length(boughtList) >0{
-				do add_belief(loose_patience_pay);
-				write "need_pay";
-				movePath <- any_location_in(one_of(counter));
-				write "need_pay " + movePath;
-				do moveAround;
-	//			do remove_belief(loose_patience);
-//				do remove_intention(loose_patience_pay, true);
-			}
-			else{
-				
-				movePath <- any_location_in(one_of(doorOut));
-				write "need_leave " + movePath;
-				do moveAround;
-				do add_belief (loose_patience_empty);
-			}
-		}
-	}
-		
-//	plan keepPatience intention: loose_patience {
-//		// if run out of patience time do add_belief(loose_patience);
-//			// out of patience and bought some products do add_belief(need_pay);
-//			// out of patience and bought do add_belief(need_leave);
-//		do remove_belief(shopping);
-//		do remove_belief(found_product);
-//		do remove_belief(found_all_product);
-//		write "loose_patience";
-//		if length(boughtList) >0{
-//			do add_belief(need_pay);
-//			write "need_pay";
-////			do remove_belief(loose_patience);
-//			do remove_intention(loose_patience, true);
-//		}
-//		else{
-//			write "need_leave";
-//			do add_belief (need_leave);
+//			write "loose_patience";
+//			if length(boughtList) >0{
+//				do add_belief(loose_patience_pay);
+//				do add_desire(need_pay);
+//				write "need_pay";
+//				movePath <- any_location_in(one_of(counter));
+//				write "need_pay " + movePath;
+//				do moveAround;
+//	//			do remove_belief(loose_patience);
+////				do remove_intention(loose_patience_pay, true);
+//			}
+//			else{
+//				
+//				movePath <- any_location_in(one_of(doorOut));
+//				write "need_leave " + movePath;
+//				do moveAround;
+//				do add_belief (loose_patience_empty);
+//				do add_desire(need_leave);
+//			}
 //		}
 //	}
+		
+	plan keepPatience intention: loose_patience {
+		// if run out of patience time do add_belief(loose_patience);
+			// out of patience and bought some products do add_belief(need_pay);
+			// out of patience and bought do add_belief(need_leave);
+		do remove_belief(shopping);
+		do remove_belief(found_product);
+		do remove_belief(found_all_product);
+		write "loose_patience";
+		if length(boughtList) >0{
+			do add_desire(need_pay);
+			write "need_pay";
+//			do remove_belief(loose_patience);
+			do remove_intention(loose_patience, true);
+		}
+		else{
+			write "need_leave";
+			do add_desire (need_leave);
+			do remove_intention(loose_patience, true);
+		}
+	}
 	
 	plan recommend intention: spread_rumors instantaneous: true{
 //		list<people> my_friends <- list<people>((social_link_base where (each.liking > 0)) collect each.agent);
