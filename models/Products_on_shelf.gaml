@@ -20,11 +20,12 @@ model Productsonshelf
 
 
 global {
-	shape_file free_spaces_shape_file <- shape_file("results/free spaces.shp");
-	file shelves_shapefile <- file("results/shelves.shp");
-	file wall_shapefile <- file("results/walls.shp");
+	file product_data_file <- file("includes/product.csv");
 	shape_file open_area_shape_file <- shape_file("results/open area.shp");
+	shape_file wall_shapefile <- shape_file("results/walls.shp");
 	shape_file pedestrian_paths_shape_file <- shape_file("results/pedestrian paths.shp");
+	shape_file shelves_shapefile <- shape_file("results/shelves.shp");
+	shape_file free_spaces_shape_file <- shape_file("results/free spaces.shp");
 	graph network;
 	geometry shape <- envelope(wall_shapefile);
 
@@ -192,12 +193,16 @@ global {
 				shape <- link(p1.friend_map,p2.friend_map);
 			}
 		}
-		
-		
-		create product_type number:nb_product{
-			// TODO Hiep: load from csv file
-			// TODO Hiep: heigh formula
+	
+		create product_type from: product_data_file {
+			location <- any_location_in(one_of(shelves));
+
+			// recompute location to avoid overlapping
+			loop while: not empty((product_type - self) at_distance 3) {
+				location <- any_location_in(one_of(shelves));
+			}
 		}
+
 		// create product link
 		loop times: nb_product/2 {
 			product_type pr1 <- one_of(product_type);
@@ -464,7 +469,6 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 			do remove_belief(found_all_product);
 			write "return_to_base remove_belief(has_gold) ";
 			do remove_intention(need_pay, true);
-			
 			//TODO Hiep Optional: add value price to sale number
 			//TODO: stand and waiting for payment speed
 			// payment_time = 
@@ -599,17 +603,15 @@ species socialLinkRepresentation{
 
 species product_type parallel: true {
 	
-	string name <-"unknown";
-	
+	int id;
+	string name;
+	string price_type;
 	int price;
-	string PrType;
-	
+	int linked_id;	
+		
 	// Eye-level > top-level > lower-level
-	float height_chance <- 0.5; //default a random chance of buying
-	
-	
-//	location <- any_location_in (on_of(shelves)); // and in a grid overlay, avoid location where we already has other product
-//	int height one_of(["high", "eye", "low"]);
+	float height_chance <- 0.5; //default a random chance of buying	
+	//	int height one_of(["high", "eye", "low"]);
 	
 	aspect default {
 		draw shape color: #yellow;
@@ -669,11 +671,8 @@ experiment normal_sim type: gui {
 			
 			species pedestrian_path aspect:free_area_aspect transparency: 0.5 ;
 			species pedestrian_path refresh: false;
-			species people;
-			
-			
-			
-			
+			species people;	
+			species product_type;
 		}
 		display friendship type: opengl{
 			species friendship_link ;
