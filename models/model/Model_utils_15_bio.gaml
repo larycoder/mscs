@@ -140,9 +140,11 @@ species miner skills: [moving] control:simple_bdi {
 				gold_mine current_mine<- gold_mine first_with (target = each.location);
 				if current_mine.quantity > 0 {
 				 	do add_belief(has_gold);
+				 	write "get_gold add_belief(has_gold) ";
 					ask current_mine {quantity <- quantity - 1;}	
 				} else {
 					do add_belief(new_predicate(empty_mine_location, ["location_value"::target]));
+					write "get_gold add_belief(empty_mine_location) ";
 				}
 				target <- nil;
 			}
@@ -155,6 +157,7 @@ species miner skills: [moving] control:simple_bdi {
 		possible_mines <- possible_mines - empty_mines;
 		if (empty(possible_mines)) {
 			do remove_intention(has_gold, true); 
+			write "choose_closest_gold_mine remove_intention(has_gold) ";
 		} else {
 			target <- (possible_mines with_min_of (each distance_to self)).location;
 		}
@@ -165,6 +168,7 @@ species miner skills: [moving] control:simple_bdi {
 		do goto target: the_market ;
 		if (the_market.location = location)  {
 			do remove_belief(has_gold);
+			write "return_to_base remove_belief(has_gold) ";
 			do remove_intention(sell_gold, true);
 			gold_sold <- gold_sold + 1;
 		}
