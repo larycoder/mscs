@@ -134,7 +134,9 @@ species miner skills: [moving] control:simple_bdi {
 		if (target = nil) {
 			do add_subintention(get_current_intention(),choose_gold_mine, true);
 			do current_intention_on_hold();
+			write "current_intention_on_hold ";
 		} else {
+			write "goto target: target " + target;
 			do goto target: target ;
 			if (target = location)  {
 				gold_mine current_mine<- gold_mine first_with (target = each.location);
