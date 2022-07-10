@@ -22,6 +22,7 @@ global {
     int current_round_came_client <- 0;
     int current_round_served_client <- 0;
     int current_round_revenue <- 0;
+    float avg_happiness <- 100;
     bool ready <- false;
 	init {
         create products from: my_file{
@@ -38,8 +39,6 @@ global {
 //			color <- #red;
 //			location <- any_location_in(world.shape);
 //		}
-		world.shape <- world.shape * 5;
-		write(world.shape);
     }
 //    action activate_button{
 //		button b <- first(button overlapping #user_location);
@@ -59,7 +58,7 @@ global {
 		}
 	} 
 	reflex update_round when: end_of_round{
-		if(current_round < 12){
+		if(current_round < 10){
 			current_round <- current_round + 1;
 			stratergy_selection <- user_input_dialog("Choose the strategy",[
 					choose("High-level",string,"cheap", ["expensive","medium","cheap"]),
@@ -92,35 +91,48 @@ species products{
 		draw circle(5) color: #red;
 	}
 }
-grid my_frame width: 100 height:100{
-	
-}
+
+
 experiment test type:gui{
 	output{
-		display main_stage background: #black {
+		display main_stage refresh: end_of_round{
 			
 			graphics "Stats"{
-				draw "Round: "+current_round+"/12" at: {0,50} color: #red;
-				draw "High-level: "+ string(stratergy_selection at "High-level") at: {20,70} color: #red;
-				draw "Eye-level: "+ string(stratergy_selection at "Eye-level") at: {20,80} color: #red;
-				draw "Low-level: "+ string(stratergy_selection at "Low-level") at: {20,90} color: #red;
+				draw "Round: "+current_round+"/10" at: {10,10} color: #green;
+				draw "High-level: "+ string(stratergy_selection at "High-level") at: {20,20} color: #red;
+				draw "Eye-level: "+ string(stratergy_selection at "Eye-level") at: {20,25} color: #red;
+				draw "Low-level: "+ string(stratergy_selection at "Low-level") at: {20,30} color: #red;
 				
-				draw "Current round status" at: {0,140} color: #red;
-				draw "Came client: "+ current_round_came_client at: {20,160} color: #red;
-				draw "Served client: "+ current_round_served_client at: {20,170} color: #red;
-				draw "Revenue: "+ current_round_revenue at: {20,180} color: #red;
+//				draw "Current round status" at: {0,140} color: #red;
+//				draw "Came client: "+ current_round_came_client at: {20,160} color: #red;
+//				draw "Served client: "+ current_round_served_client at: {20,170} color: #red;
+//				draw "Revenue: "+ current_round_revenue at: {20,180} color: #red;
 				
-				draw "Score: "+ current_score at: {300,50} color: #black;
+				draw "Score: "+ current_score at: {70,10} color: #black;
 			}
+		}
+		display "Total status"{
 			chart "Total status" type:histogram 
-									position: {250, 80}
-									size: {0.5,0.4}
 									x_label:''
 			 						y_label:'' {
 					data "Total came client" value: total_came_client color:#blue;
 					data "Total served client" value: total_served_client color:#yellow;
 					data "Total revenue" value: total_revenue/1000 color:#grey;
 				}
+		}
+		display "Round status" refresh:end_of_round{
+			chart "Past information" type:series
+									x_label:''
+			 						y_label:'' {
+					data "Total came client" value: current_round_came_client  color:#blue;
+					data "Total served client" value: current_round_served_client color:#yellow; 
+					data "Total revenue" value: current_round_revenue/1000 color:#grey;
+				}
+		}
+		display "Happiness"{
+			chart "Avarage happiness" type:series{
+				data "Avg. Happiness" value: avg_happiness color:#darkgrey;
+			}
 		}
 	}
 }
