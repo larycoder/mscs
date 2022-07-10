@@ -173,8 +173,10 @@ global {
 		// Init random need shopping people with first_customers_rate
 		int need_shopping <- int(abs(first_customers_rate*nb_people));
 		loop times: need_shopping {
+			people p1 <- one_of(people where(each.needShopping != true));
 			
-			one_of(people).needShopping <- true;
+			p1.needShopping <- true;
+			
 		}
 		
 		// Create random friendship graph
@@ -185,7 +187,7 @@ global {
 			
 			create friendship_link  {
 				add edge (p1, p2, self) to: friendship_graph;
-				shape <- link(p1,p2);
+				shape <- link(p1.friend_map,p2.friend_map);
 			}
 		}
 		
@@ -206,13 +208,13 @@ global {
 	}
 	
 	// TODO: more specific pause condition
-	reflex stop when: empty(people) or (shopperCounts =0)  {
-		do pause;
-	}
+//	reflex stop when: empty(people) or (shopperCounts =0)  {
+//		do pause;
+//	}
 	
 	// program clock
 	reflex current_time {
-		write "Now is " + time/6; 
+//		write "Now is " + time/6; 
 		// Re-calculate shopping need here
 		
 	}
@@ -255,7 +257,8 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 	rgb color <- rnd_color(255);
 	float speed <- gauss(1,0.1) #km/#h min: 0.1 #km/#h;
 	point target ;
-	point show_product;
+	
+	point friend_map <- any_location_in(world);
 	
 	float patienceTime <-  30#minute ;
 	float walkinTime;
@@ -279,9 +282,11 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 	
 	init{
 		friends <- list<people>(friendship_graph neighbors_of (self));
-		if (needShopping) {
-			do add_desire(shopping);
-		}
+		do add_desire(travel_to_shop);
+		write "do add_belief(travel_to_shop); ";
+//		if (needShopping) {
+//			
+//		}
 		
 	}
 	
@@ -328,11 +333,17 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 //	rule belief: found_all_product new_desire: need_pay strength: 1.0;
 	
 	plan comeback intention: travel_to_shop {
+		write "run comeback";
+		if (needShopping) {
+			do add_desire(shopping);
+			write "do add_desire(shopping); "; 
+			do remove_intention(travel_to_shop, false);
+		}
 		
-		do add_desire(shopping); 
+//		do add_desire(shopping); 
 		shopperCounts <- shopperCounts +1;
 		
-		do remove_intention(travel_to_shop, true); 
+		 
 		
 	}
 	// The current intention will determine the selected planThe current intention will determine the selected plan
@@ -487,7 +498,19 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 		
 	}	
 	
-	
+	aspect friends_default {
+		
+		/**
+		 * Green: friends who go shopping
+		 *	Red: friends who doesnt
+		 */
+		if needShopping{ 
+			draw circle( 0.5, friend_map )  color: #green; 
+		}else{
+			draw circle( 0.5, friend_map )  color: #red;
+		}
+		
+	}
 	aspect default {
 		
 		if display_circle_min_dist and minimal_distance > 0 {
@@ -616,7 +639,7 @@ experiment normal_sim type: gui {
 		}
 		display friendship type: opengl{
 			species friendship_link ;
-			species people;
+			species people aspect: friends_default;
 			}
 		display product_type type: opengl{
 			species product_link ;
