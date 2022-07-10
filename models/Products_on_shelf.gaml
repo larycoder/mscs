@@ -20,7 +20,7 @@ model Productsonshelf
 
 
 global {
-	file product_data_file <- file("includes/product.csv");
+	file product_data_file <- csv_file("includes/product.csv", ",", string, true);
 	shape_file open_area_shape_file <- shape_file("results/open area.shp");
 	shape_file wall_shapefile <- shape_file("results/walls.shp");
 	shape_file pedestrian_paths_shape_file <- shape_file("results/pedestrian paths.shp");
@@ -110,6 +110,12 @@ global {
 	predicate need_leave <- new_predicate ("leave");
 	predicate spread_rumors <- new_predicate ("recommend to friends");
 	
+	// product order strategy weight
+	float product_price_weight <- rnd(0.0,1.0) min: 0.0 max: 1.0;
+	float nb_product_weight <- rnd(0.0, 1.0) min: 0.0 max: 1.0;
+	float product_link_weight <- rnd(0.0, 1.0) min: 0.0 max: 1.0;
+	float bias_weight <- rnd(0.0, 1.0) min: 0.0 max: 1.0;
+	
 	init {
 		create counter from:counter_shapefile;
 		create doorIn from:doorIn_shapefile;
@@ -150,7 +156,25 @@ global {
 			create product_link  {
 				add edge (pr1, pr2, self) to: product_graph;
 				shape <- link(pr1,pr2);
+				ask pr1 { if not (my_links contains pr2) {my_links << pr2;} }
+				ask pr2 { if not (my_links contains pr1) {my_links << pr1;} }
 			}
+		}
+		
+		// compute flip percentage for product arrangement strategy
+		ask product_type { do update_order_param_part_1; }
+		ask product_type { do update_order_param_part_2; }
+
+		// normalize flip percentage
+		list<float> flip_percent_list <- product_type collect each.flip_percent;
+		float min_flip <- min(flip_percent_list);
+		float max_flip <- max(flip_percent_list);
+		float range_flip <- max_flip - min_flip;
+		
+		// update height of product
+		ask product_type {
+			flip_percent <- (flip_percent - min_flip) / range_flip;
+			do update_height;
 		}
 		
 		create people number:nb_people {
@@ -308,7 +332,6 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 	
 	init{
 		friends <- list<people>(friendship_graph neighbors_of (self));
-		write "Product: " + productList;
 	}
 	
 	action re_init {
@@ -415,9 +438,6 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 					
 				 	write "get_gold add_belief(has_gold) ";
 //					ask current_product {quantity <- quantity - 1;}	
-
-					// TODO Hiep Option: add product to list
-					
 					// if all product is getted from this then we update belief
 					if (length(productList)=0 and length(foundList)>0){
 						do remove_belief(found_product);
@@ -587,6 +607,7 @@ species friendship_link parallel: true{
 	}
 }
 
+
 species socialLinkRepresentation{
 	people origin;
 //	agent destination;
@@ -598,32 +619,67 @@ species socialLinkRepresentation{
 	}
 }
 
+
 species product_type parallel: true {
 	
 	int id;
 	string name;
 	string price_type;
 	int price;
-	int linked_id;	
+	int linked_id; // deprecated
+	list<product_type> my_links;
 		
 	// Eye-level > top-level > lower-level
 	float height_chance <- 0.5; //default a random chance of buying	
-	//	int height one_of(["high", "eye", "low"]);
+
+	// Height must in list ["high", "eye", "low"]
+	string height;
+	
+	// Product arrangement strategy parameter
+	float prod_price_percent;
+	float nb_product_percent;
+	float product_link_percent;
+	float flip_percent <- 0.0;
+	
+	// basic params	
+	action update_order_param_part_1 {
+		prod_price_percent <- price / sum(product_type collect each.price);
+		nb_product_percent <- length(product_type where(each.name = self.name)) / length(product_type);
+	}
+	
+	// advance params
+	action update_order_param_part_2 { // should be call after all products are created
+		product_link_percent <- (prod_price_percent + sum(my_links collect each.prod_price_percent)) / (length(my_links) + 1);	
+		flip_percent <- flip_percent + product_price_weight * prod_price_percent;
+		flip_percent <- flip_percent + nb_product_weight * nb_product_percent;
+		flip_percent <- flip_percent + product_link_weight * product_link_percent;
+		flip_percent <- flip_percent + bias_weight;
+		flip_percent <- flip_percent / 4;	
+	}
+	
+	action update_height {
+		write flip_percent;
+		if(flip(flip_percent)) {
+			height <- "eye";
+		} else if (flip(flip_percent)) {
+			height <- "high";
+		} else {
+			height <- "low";
+		}
+	}
 	
 	aspect default {
 		draw shape color: #yellow;
 	}
 }
+
+
 species product_link parallel: true{
 	
 	aspect default {
 		draw shape color: #orange;
 	}
 }
-
-
-
-
 
 
 species counter {
