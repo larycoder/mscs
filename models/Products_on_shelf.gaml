@@ -14,7 +14,7 @@ global {
     file my_file <- csv_file("./includes/product.csv",',',string,true);
     map stratergy_selection;
     bool end_of_round <- true;
-    int current_round <- 1;
+    int current_round <- 0;
     int current_score <- 100;
     int total_came_client <- 1000;
     int total_served_client <- 600;
@@ -30,13 +30,8 @@ global {
         ready <- user_confirm("Situation",
         							"You are the new manager of this store,the last manager was fired because the revenue of the shop was too low and and the consequence is the shop almost being closed. As a manager, it is your job to maximize the income for the shop and make it greate again.\nIn this game, your work to optimize the revenue is find a way to sort the product on the shelf in a proper way.");
 		do quit_game(ready);
-		ready <- user_confirm("Notification","It's your first month, learn some job");
-		do quit_game(ready);
-        stratergy_selection <- user_input_dialog("Choose the strategy",[
-									choose("High-level",string,"cheap", ["expensive","medium","cheap"]),
-									choose("Eye-level",string,"expensive", ["expensive","medium","cheap"]),
-									choose("Low-level",string,"medium", ["expensive","medium","cheap"])
-								]);
+//		ready <- user_confirm("Notification","It's your first month, learn some job");
+//		do quit_game(ready);
 //        do create_button(#grey,{50.0,50.0});
 //		do create_button(#darkblue,{50.0,80.0,0});
 //		create button {
@@ -63,17 +58,14 @@ global {
 			do die;
 		}
 	} 
-	reflex choose_strategy when: false {
-		stratergy_selection <- user_input_dialog("Choose the strategy",[
-									choose("High-level",string,"cheap", ["expensive","medium","cheap"]),
-									choose("Eye-level",string,"expensive", ["expensive","medium","cheap"]),
-									choose("Low-level",string,"medium", ["expensive","medium","cheap"])
-								]
-		);
-	}
-	reflex update_round{
+	reflex update_round when: end_of_round{
 		if(current_round < 12){
 			current_round <- current_round + 1;
+			stratergy_selection <- user_input_dialog("Choose the strategy",[
+					choose("High-level",string,"cheap", ["expensive","medium","cheap"]),
+					choose("Eye-level",string,"expensive", ["expensive","medium","cheap"]),
+					choose("Low-level",string,"medium", ["expensive","medium","cheap"])
+				]);
 		}
 		else {
 			do pause;
@@ -105,7 +97,7 @@ grid my_frame width: 100 height:100{
 }
 experiment test type:gui{
 	output{
-		display main_stage {
+		display main_stage background: #black {
 			
 			graphics "Stats"{
 				draw "Round: "+current_round+"/12" at: {0,50} color: #red;
