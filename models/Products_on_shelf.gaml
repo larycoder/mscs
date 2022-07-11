@@ -122,11 +122,13 @@ global {
 	int total_shopping_people <- 0;
 	int total_buying_people <- 0;
 	int total_revenue <- 0;
+	float avg_happiness <- 0.0 update: mean(people collect(each.happiness));
 	
 	init {
 		create counter from:counter_shapefile;
 		create doorIn from:doorIn_shapefile;
 		create doorOut from:doorOut_shapefile;
+		create product_owner number: 1;
 		create floors from:open_area_shape_file {
 			shape <- open_area;
 		}
@@ -243,32 +245,44 @@ global {
 				shape <- link(p1.friend_map,p2.friend_map);
 			}
 		}
-	}
+	}	
 	
-	// TODO: more specific pause condition
-	reflex stop when: every(daily #cycle) { // empty(people) or (shopperCounts =0)  {
-	if (numberOfDays + 1 > 1) {
-		ask counter {
-			round_shopping_people <- 0;
-			round_buying_people <- 0;
+	action quit_game(bool ready){
+		if (not ready){
+			do die;
 		}
-		ask people {
-		//			write "Try re init";
-			do re_init;
+	} 
+
+	int round <- 0;
+	bool end_of_round <- false;
+	reflex set_end_of_round when: every(daily){
+		end_of_round <- true;
+	}
+
+	reflex update_round when: end_of_round{
+
+		if(round < 10){
+			ask counter {
+				round_shopping_people <- 0;
+				round_buying_people <- 0;
+			}
+
+			ask people {
+			//			write "Try re init";
+				do re_init;
+			}
+			round <- round + 1;
+			
+			ask product_owner {
+				do arrange_product_by_player;
+			}
+
+			end_of_round <- false;
+		}
+		else {
+			do pause;
 		}
 	}
-	do pause;
-}
-	
-	// program clock
-	reflex current_time when: every(daily#cycle) {
-//		write "Now is " + time/6; 
-		// Re-calculate shopping need here
-		numberOfDays <- numberOfDays + abs((cycle - numberOfDays*daily)/daily);
-		write "Day: " + (numberOfDays+1);
-		// TODO: recalculate states
-	}
-	
 }
 
 species shelves {
@@ -736,5 +750,48 @@ experiment normal_sim type: gui {
 //		}
 	}
 
+}
+
+experiment test type:gui{
+	output{
+		display main_stage refresh: end_of_round{
+			
+			graphics "Stats"{
+				draw "Round: "+round+"/10" at: {10,10} color: #green;
+				draw "High-level: "+ string(selector at "High-level") at: {20,20} color: #red;
+				draw "Eye-level: "+ string(selector at "Eye-level") at: {20,25} color: #red;
+				draw "Low-level: "+ string(selector at "Low-level") at: {20,30} color: #red;
+				
+//				draw "Current round status" at: {0,140} color: #red;
+//				draw "Came client: "+ tround_shopping_people at: {20,160} color: #red;
+//				draw "Served client: "+ round_buying_people at: {20,170} color: #red;
+//				draw "Revenue: "+ round_revenue at: {20,180} color: #red;
+				
+			}
+		}
+		display "Total status"{
+			chart "Total status" type:histogram 
+									x_label:''
+			 						y_label:'' {
+					data "Total came client" value: total_shopping_people color:#blue;
+					data "Total served client" value: total_buying_people color:#yellow;
+					data "Total revenue" value: total_revenue/1000 color:#grey;
+				}
+		}
+		display "Round status" refresh:every(daily){
+			chart "Past information" type:series
+									x_label:''
+			 						y_label:'' {
+					data "Total came client" value: one_of(counter).round_shopping_people  color:#blue;
+					data "Total served client" value: one_of(counter).round_buying_people color:#yellow; 
+					data "Total revenue" value: one_of(counter).round_revenue/1000 color:#grey;
+				}
+		}
+		display "Happiness"{
+			chart "Avarage happiness" type:series{
+				data "Avg. Happiness" value: avg_happiness color:#darkgrey;
+			}
+		}
+	}
 }
  

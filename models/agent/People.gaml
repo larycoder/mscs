@@ -56,6 +56,7 @@ global {
 	int total_shopping_people;
 	int total_buying_people;
 	int total_revenue;
+	map selector;
 }
 
 /*
@@ -82,10 +83,11 @@ species product_owner {
 	}
 	
 	action arrange_product_by_player {
-		string high_level <- choose("High-level", string, "cheap", ["high", "medium", "low"]);
-		string eye_level <- choose("Eye-level", string, "expensive", ["high", "medium", "low"]);
-		string low_level <- choose("Low-level", string, "medium", ["high", "medium", "low"]);
-		map selector <- user_input_dialog("Choose the strategy", [high_level, eye_level, low_level]);
+		selector <- user_input_dialog("Choose the strategy",[
+					choose("High-level",string,"low", ["high","medium","low"]),
+					choose("Eye-level",string,"high", ["high","medium","low"]),
+					choose("Low-level",string,"medium", ["high","medium","low"])
+				]);
 		
 		ask product_type {
 			if (price_type = (selector at "High-level")) {
