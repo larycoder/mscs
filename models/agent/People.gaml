@@ -56,7 +56,47 @@ global {
 	predicate spread_rumors <- new_predicate ("recommend to friends");
 }
 
-species people skills: [ pedestrian ] control: simple_bdi {
+/*
+ * Special person to control proudct ( does not need to present in gui ).
+ */
+species product_owner {
+	// stategy to decide product height
+	action arrange_product_height {
+		// compute flip percentage for product arrangement strategy
+		ask product_type { do update_order_param_part_1; }
+		ask product_type { do update_order_param_part_2; }
+
+		// normalize flip percentage
+		list<float> flip_percent_list <- product_type collect each.flip_percent;
+		float min_flip <- min(flip_percent_list);
+		float max_flip <- max(flip_percent_list);
+		float range_flip <- max_flip - min_flip;
+		
+		// update height of product
+		ask product_type {
+			flip_percent <- (flip_percent - min_flip) / range_flip;
+			do update_height;
+		}
+	}
+	
+	// link product together
+	action create_product_link {
+		loop times: length(product_type)/2 {
+			product_type pr1 <- one_of(product_type);
+			product_type pr2 <- one_of(list(product_type) - pr1);
+			
+			create product_link  {
+				add edge (pr1, pr2, self) to: product_graph;
+				shape <- link(pr1,pr2);
+				ask pr1 { if not (my_links contains pr2) {my_links << pr2;} }
+				ask pr2 { if not (my_links contains pr1) {my_links << pr1;} }
+			}
+		}
+	}
+}
+
+
+species people skills: [ pedestrian ] {
 	// person attribute parameter
 	rgb color <- #blue;
 	geometry shape <- circle(10);
@@ -74,12 +114,12 @@ species people skills: [ pedestrian ] control: simple_bdi {
 	bool current_status;
 	
 	// buying activity
-	string target_product_name <- nil;
-	int money <- rnd(1, 5);
+	list<product_type> product_list;
 
 	bool need_shopping <- true;
 	
 	init {
+		// pedestrian setup
 		obstacle_consideration_distance <-P_obstacle_consideration_distance;
 		pedestrian_consideration_distance <-P_pedestrian_consideration_distance;
 		shoulder_length <- P_shoulder_length;
@@ -108,27 +148,18 @@ species people skills: [ pedestrian ] control: simple_bdi {
 			minimal_distance <- P_minimal_distance_advanced;
 		}
 		
-		do add_desire(shopping);
+		// product setup
+		product_list <- rnd(1, length(product_type)) among product_type;
 	}
 	
-	plan get_product intention: found_product {}
-	plan leave intention: need_leave {}
-	plan pay intention: need_pay {}
-	plan keepPatience intention: loose_patience {}
-	plan lets_wander intention:shopping finished_when: has_desire(found_product) or has_desire (loose_patience){
-		do moveAround;
+	reflex view_products {
+		list<product_type> viewed <- product_type at_distance view_dist;
+		product_type target <- one_of(viewed where(each in product_list));
+		
+		// TODO: do something with viewed product
 	}
-	
-	perceive target: store_product in: view_dist {
-		if name = myself.target_product_name {
-			revenue <- revenue + self.price;
-			ask myself {
-				target_product_name <- nil;
-			}
-		}
-	}
-	
-	action moveAround {
+
+	reflex move {
 		if (walkinTime != nil and time > walkinTime + patience_time) {
 			if (final_waypoint = nil) {
 				do compute_virtual_path pedestrian_graph: my_network target: any_location_in(one_of(my_doorOut));
@@ -139,17 +170,6 @@ species people skills: [ pedestrian ] control: simple_bdi {
 				do compute_virtual_path pedestrian_graph: my_network target: any_location_in(my_open_area);
 			}
 			do walk;
-		}
-	}
-	
-	action status {}
-	
-	reflex update {
-		do status;
-		switch current_status {
-			match need_shopping {
-				do add_desire(shopping);
-			}
 		}
 	}
 
