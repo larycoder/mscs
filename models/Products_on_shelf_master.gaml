@@ -20,11 +20,12 @@ model Productsonshelf
 
 
 global {
-	shape_file free_spaces_shape_file <- shape_file("results/free spaces.shp");
-	file shelves_shapefile <- file("results/shelves.shp");
-	file wall_shapefile <- file("results/walls.shp");
+	file product_data_file <- csv_file("includes/product.csv", ",", string, true);
 	shape_file open_area_shape_file <- shape_file("results/open area.shp");
+	shape_file wall_shapefile <- shape_file("results/walls.shp");
 	shape_file pedestrian_paths_shape_file <- shape_file("results/pedestrian paths.shp");
+	shape_file shelves_shapefile <- shape_file("results/shelves.shp");
+	shape_file free_spaces_shape_file <- shape_file("results/free spaces.shp");
 	graph network;
 	geometry shape <- envelope(wall_shapefile);
 
@@ -62,7 +63,7 @@ global {
 	
 //	float step <- 0.1;
 	int nb_people <- 10;
-	int nb_product <- 10;
+	int nb_product <- 15;
 	geometry open_area ;
 	geometry free_space <- envelope(free_spaces_shape_file);
 	
@@ -90,7 +91,7 @@ global {
  	
  	float first_customers_rate <- 0.1 ; // 10% of population
 	
-//	float patienceTime_global <- 100 #cycle;// 5.0 #minute ; 
+	float patienceTime_global <- 300 #cycle;// 5.0 #minute ; 
 	string prod_at_location <- "prod_at_location";
 	string reject_prod_location <- "reject_prod_location";
 	
@@ -104,13 +105,16 @@ global {
 	predicate found_product <- new_predicate("found one target product");
 	predicate found_all_product <- new_predicate("found all target product");
 	
-	predicate loose_patience <- new_predicate("loose patience"); 
-	predicate loose_patience_pay <- new_predicate("found some target product"); 
-	predicate loose_patience_empty <- new_predicate("cannot found target product");
-	
+	predicate loose_patience <- new_predicate("cannot found target product");
 	predicate need_pay <- new_predicate ("picked some products");
 	predicate need_leave <- new_predicate ("leave");
 	predicate spread_rumors <- new_predicate ("recommend to friends");
+	
+	// product order strategy weight
+	float product_price_weight <- rnd(0.0,1.0) min: 0.0 max: 1.0;
+	float nb_product_weight <- rnd(0.0, 1.0) min: 0.0 max: 1.0;
+	float product_link_weight <- rnd(0.0, 1.0) min: 0.0 max: 1.0;
+	float bias_weight <- rnd(0.0, 1.0) min: 0.0 max: 1.0;
 	
 	init {
 		create counter from:counter_shapefile;
@@ -135,12 +139,50 @@ global {
 			do build_intersection_areas pedestrian_graph: network;
 		}
 		
+		create product_type from: product_data_file {
+			location <- any_location_in(one_of(shelves));
+
+			// recompute location to avoid overlapping
+			loop while: not empty((product_type - self) at_distance 3) {
+				location <- any_location_in(one_of(shelves));
+			}
+		}
+
+		// create product link
+		loop times: nb_product/2 {
+			product_type pr1 <- one_of(product_type);
+			product_type pr2 <- one_of(list(product_type) - pr1);
+			
+			create product_link  {
+				add edge (pr1, pr2, self) to: product_graph;
+				shape <- link(pr1,pr2);
+				ask pr1 { if not (my_links contains pr2) {my_links << pr2;} }
+				ask pr2 { if not (my_links contains pr1) {my_links << pr1;} }
+			}
+		}
+		
+		// compute flip percentage for product arrangement strategy
+		ask product_type { do update_order_param_part_1; }
+		ask product_type { do update_order_param_part_2; }
+
+		// normalize flip percentage
+		list<float> flip_percent_list <- product_type collect each.flip_percent;
+		float min_flip <- min(flip_percent_list);
+		float max_flip <- max(flip_percent_list);
+		float range_flip <- max_flip - min_flip;
+		
+		// update height of product
+		ask product_type {
+			flip_percent <- (flip_percent - min_flip) / range_flip;
+			do update_height;
+		}
+		
 		create people number:nb_people {
 //			location <- any_location_in(one_of(open_area));
 			location <- any_location_in(one_of(doorIn));
 //			write "patienceTime default " + patienceTime ;
-//			patienceTime <- myself.patienceTime_global; 
-			
+			patienceTime <- myself.patienceTime_global; 
+			walkinTime <- time;
 //			write "patienceTime " + myself.patienceTime + " " + patienceTime ;
 			obstacle_consideration_distance <-P_obstacle_consideration_distance;
 			pedestrian_consideration_distance <-P_pedestrian_consideration_distance;
@@ -193,26 +235,6 @@ global {
 			create friendship_link  {
 				add edge (p1, p2, self) to: friendship_graph;
 				shape <- link(p1.friend_map,p2.friend_map);
-			}
-		}
-		
-		
-		create product_type number:nb_product{
-			// TODO Hiep: load from csv file
-			// TODO Hiep: heigh formula
-			name <- "pen";
-			price <- 100;
-			location <- any_location_in(one_of(shelves) );
-//			linked_id <- 21;
-		}
-		// create product link
-		loop times: nb_product/2 {
-			product_type pr1 <- one_of(product_type);
-			product_type pr2 <- one_of(list(product_type) - pr1);
-			
-			create product_link  {
-				add edge (pr1, pr2, self) to: product_graph;
-				shape <- link(pr1,pr2);
 			}
 		}
 	}
@@ -277,29 +299,24 @@ species wall {
 
 species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 	rgb color <- rnd_color(255);
-	float speed <- gauss(2,1) #km/#h min: 1 #km/#h;
+	float speed <- gauss(1,0.1) #km/#h min: 0.1 #km/#h;
 	point target ;
-	point movePath;
 	point friend_map <- any_location_in(world);
 	
 	float patienceTime <-  30#minute ;
-	bool keepPatience <- false;
 	float walkinTime;
 	float searching_time<- 0;
-	float counting_time;
 	float payment_time <- 0;
 	
 	bool need_product <- false;
-	list<string> productList <- ["pen"];
-	
+	list<product_type> productList <- rnd(1, length(product_type)) among product_type;
 
-	list<point> checkProd;
 	list<string> boughtList <- [];
 	list<string> foundList <- [];
 	int found_number <-0;
 	
 //	string current_status;
-	float view_dist<-5.0; //dist seeing the product
+	float view_dist<-3.0; //dist seeing the product
 	float pick_dist<-1.0; //dist to pick the product
 	
 	list<people> friends;
@@ -315,7 +332,6 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 	
 	init{
 		friends <- list<people>(friendship_graph neighbors_of (self));
-		
 	}
 	
 	action re_init {
@@ -326,11 +342,6 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 		comeback_rate_threshold <- 0.7; // assume that first happiness > 0.5
 //		do add_desire(travel_to_shop);
 		target <- nil;
-		happiness <-0;
-		ask self {
-			location <- any_location_in(one_of(doorIn));
-		}
-		
 	}
 	
 //	reflex update {
@@ -353,7 +364,7 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 	 * agents and itself). The agent can perceive other agents up 
 	 * to a fixed distance or inside a specific geometry.
 	 */
-	perceive target: product_type where(!(each.location in checkProd)) in: view_dist parallel: true {
+	perceive target: product_type  in:view_dist parallel: true {
 //	write "self.name " + self.name;
 //	write "myself.productList " + myself.productList;
 	if (self.name in myself.productList){
@@ -361,7 +372,6 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 		focus id: prod_at_location var: location; // belief to saw_product
 		write "prod_at_location " + location;
 		ask myself {
-			
 	        do remove_intention(shopping, false);
 	        
 	    }	
@@ -372,11 +382,10 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 	 * executed at each iteration to infer new desires or beliefs 
 	 * from the agent's current beliefs and desires,
 	 */
-	rule belief: saw_product new_desire: found_product strength: 4;
-	rule belief: found_product new_desire: shopping strength: 5;
-	rule belief: found_all_product new_desire: need_pay strength: 3;
-//	rule belief: loose_patience_pay new_desire: need_pay strength: 6;
-//	rule belief: loose_patience_empty new_desire: need_leave strength: 1;
+	rule belief: saw_product new_desire: found_product strength: 2.0;
+	rule belief: found_product new_desire: shopping strength: 3.0;
+	rule belief: found_all_product new_desire: need_pay strength: 1.0;
+//	rule belief: loose_patience new_desire: need_pay strength: 1.0;
 	
 	reflex comeback when: every(daily#cycle){
 //		write "run comeback " +opinion;
@@ -384,22 +393,17 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 		comeback_rate <- (int(need_product) + opinion + happiness)/3;
 //		write "comeback_rate " + comeback_rate;
 		if  (comeback_rate >= comeback_rate_threshold) {
-			
 			need_product <- true;
-			//TODO Hiep: randomize product list
+			productList <- rnd(1, length(product_type)) among product_type;
 			shopperCounts <- shopperCounts +1;
 			
 			do add_desire(shopping);
-			walkinTime <- time;
-			keepPatience <- true;
-			write"walkinTime " + walkinTime;
 		}
 		
 
 	}
 	// The current intention will determine the selected planThe current intention will determine the selected plan
-	plan lets_wander intention:shopping finished_when: has_desire(found_all_product) or has_desire(loose_patience){
-		movePath <- any_location_in(open_area);
+	plan lets_wander intention:shopping finished_when: has_desire(found_all_product) or has_desire (loose_patience){
 		do moveAround;
 	} 
 	
@@ -409,54 +413,43 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 		list<point> reject_prod <- get_beliefs_with_name(reject_prod_location) collect (point(get_predicate(mental_state (each)).values["location_value"]));
 		possible_product <- possible_product - reject_prod;
 		if (empty(possible_product)) {
-//			write "empty product";
-			do remove_intention(found_product, true); 
-//			write "choose_best_product remove_intention(found_product) ";
+			write "empty product";
+			do remove_intention(found_product, false); 
+			write "choose_best_product remove_intention(found_product) ";
 		} else {
 			target <- (possible_product with_min_of (each distance_to self)).location;
-			write "update target " + target;
 		}
-		do remove_intention(choose_product, true); 
+		do remove_intention(choose_product, false); 
 	}
 	
 	plan get_product intention:found_product {
 		//find all products in list
 		// if found all change do add_belief(found_product);
-//		write "get_product ";
+		
 		if (target = nil) {
 			do add_subintention(get_current_intention(),choose_product, true);
 			do current_intention_on_hold();
-//			write "current_intention_on_hold ";
 		} else {
-//			write "goto target: target " + target;
 			do goto target: target ;
-			if (target distance_to location) <=1  {
+			if (target = location)  {
 				product_type current_product<- product_type first_with (target = each.location);
 				
-				if (current_product != nil and flip(current_product.height_chance)) {
+				if (flip(current_product.height_chance)) {
 					
 				 	write "get_gold add_belief(has_gold) ";
 //					ask current_product {quantity <- quantity - 1;}	
-
-					// TODO Hiep Option: add product to list
-					productList <- [];
-					foundList <- ["pen"];
-					boughtList <- ["pen"];
-					
 					// if all product is getted from this then we update belief
 					if (length(productList)=0 and length(foundList)>0){
-						do add_belief(found_all_product);
 						do remove_belief(found_product);
-						do remove_belief(shopping);
-						write "Found all prod";
-					}else{do add_belief(found_product);}
-
+						do add_belief(found_all_product);
+					}
+					
+					do add_belief(found_product);
 				}
-//				else{
+				else{
 					do add_belief(new_predicate(reject_prod_location, ["location_value"::target]));
-					add target to: checkProd;
-					write "move on " +target;
-//				}
+					write "get_product new_predicate(reject_prod_location) ";
+				}
 
 				target <- nil;
 			}
@@ -469,106 +462,60 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 		// if run out of patience time do add_belief(loose_patience);
 			// out of patience and bought some products do add_belief(need_pay);
 			// out of patience and bought do add_belief(need_leave);
-		do remove_belief(found_product);
-		do remove_belief(found_all_product);
-		do remove_belief (shopping);
-	
-		target <- any_location_in(one_of(doorOut));
+		target <- doorOut;
 		write "door OUT";
 		do goto target: target ;
+		if (target = location)  {
+			target <- doorIn;
+			do goto target: target ; // back to the population
+			write "back to population";
+		}
 		shopperCounts <- shopperCounts -1;
-//		if (target = location)  {
-//			target <- any_location_in(one_of(doorIn));
-//			do goto target: target ; // back to the population
-//			write "back to population";
-//			shopperCounts <- shopperCounts -1;
-//		}
+		
 	}
 	
 	plan pay intention: need_pay {
-//		write" pay " + target;
+		// if run out of patience time do add_belief(loose_patience);
+			// out of patience and bought some products do add_belief(need_pay);
+			// out of patience and bought do add_belief(need_leave);
 		
-		do remove_belief(found_product);
-		do remove_belief(found_all_product);
-		do remove_belief (shopping);
-			
-		target <- any_location_in(one_of(counter));
-		write"pay target " + target ;
+		target <- counter;
 		do goto target: target ;
-//		movePath <-any_location_in(one_of(counter));
-		do moveAround;
-		if (location  distance_to target)<=1  {
-			counting_time <- cycle;
-			
-			write "return_to_base remove_belief(found_product) ";
-//			do remove_intention(need_pay, true);
-			
+		if (target = location)  {
+			do remove_belief(found_product);
+			do remove_belief(found_all_product);
+			write "return_to_base remove_belief(has_gold) ";
+			do remove_intention(need_pay, true);
 			//TODO Hiep Optional: add value price to sale number
 			//TODO: stand and waiting for payment speed
 			// payment_time = 
-			write "paid";
 		}
-		payment_time <- counting_time +length(boughtList)*10; //cycle
-		if cycle >= payment_time {
-			do add_desire(need_leave);
-			do remove_intention(need_pay, true); 
-		}
-		
+		do add_desire(need_leave);
+		do remove_intention(need_pay, true); 
 		
 	}
 	
-//	reflex search_time {
-//		searching_time <- walkinTime +patienceTime;
-//		
-//		if (time > searching_time) and keepPatience{
-//			write "searching_time " + searching_time;
-//			keepPatience <- false;
-//			do add_desire(loose_patience);
-
-//			do remove_belief(shopping);
-//			do remove_belief(found_product);
-//			do remove_belief(found_all_product);
-			
-//			write "loose_patience";
-//			if length(boughtList) >0{
-//				do add_belief(loose_patience_pay);
-//				do add_desire(need_pay);
-//				write "need_pay";
-//				movePath <- any_location_in(one_of(counter));
-//				write "need_pay " + movePath;
-//				do moveAround;
-//	//			do remove_belief(loose_patience);
-////				do remove_intention(loose_patience_pay, true);
-//			}
-//			else{
-//				
-//				movePath <- any_location_in(one_of(doorOut));
-//				write "need_leave " + movePath;
-//				do moveAround;
-//				do add_belief (loose_patience_empty);
-//				do add_desire(need_leave);
-//			}
-//		}
-//	}
+	reflex search_time {
+		searching_time <- walkinTime +patienceTime;
+		if (time > searching_time){
+//			write "loose patience";
+			do add_desire(loose_patience);
+		}
+	}
 		
 	plan keepPatience intention: loose_patience {
 		// if run out of patience time do add_belief(loose_patience);
 			// out of patience and bought some products do add_belief(need_pay);
 			// out of patience and bought do add_belief(need_leave);
-		do remove_belief(shopping);
-		do remove_belief(found_product);
-		do remove_belief(found_all_product);
-		write "loose_patience";
 		if length(boughtList) >0{
-			do add_desire(need_pay);
-			write "need_pay";
-//			do remove_belief(loose_patience);
+			do add_belief(need_pay);
+			do remove_belief(shopping);
+			do remove_belief(loose_patience);
 			do remove_intention(loose_patience, true);
 		}
 		else{
-			write "need_leave";
+			write "loose patience";
 			do add_desire (need_leave);
-			do remove_intention(loose_patience, true);
 		}
 	}
 	
@@ -609,15 +556,6 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 		}
 		
 	}	
-
-//	action moveAround {
-//		
-//			if (final_waypoint = nil) {
-//			do compute_virtual_path pedestrian_graph:network target: movePath ;
-//		}
-//			do walk ;
-//		}
-		
 	
 	aspect friends_default {
 		
@@ -669,6 +607,7 @@ species friendship_link parallel: true{
 	}
 }
 
+
 species socialLinkRepresentation{
 	people origin;
 //	agent destination;
@@ -680,34 +619,67 @@ species socialLinkRepresentation{
 	}
 }
 
+
 species product_type parallel: true {
 	
-	string name <-"unknown";
-	
+	int id;
+	string name;
+	string price_type;
 	int price;
-	string PrType;
-	
+	int linked_id; // deprecated
+	list<product_type> my_links;
+		
 	// Eye-level > top-level > lower-level
-	float height_chance <- 0.9; //default a random chance of buying
+	float height_chance <- 0.5; //default a random chance of buying	
+
+	// Height must in list ["high", "eye", "low"]
+	string height;
 	
+	// Product arrangement strategy parameter
+	float prod_price_percent;
+	float nb_product_percent;
+	float product_link_percent;
+	float flip_percent <- 0.0;
 	
-//	location <- any_location_in (on_of(shelves)); // and in a grid overlay, avoid location where we already has other product
-//	int height one_of(["high", "eye", "low"]);
+	// basic params	
+	action update_order_param_part_1 {
+		prod_price_percent <- price / sum(product_type collect each.price);
+		nb_product_percent <- length(product_type where(each.name = self.name)) / length(product_type);
+	}
+	
+	// advance params
+	action update_order_param_part_2 { // should be call after all products are created
+		product_link_percent <- (prod_price_percent + sum(my_links collect each.prod_price_percent)) / (length(my_links) + 1);	
+		flip_percent <- flip_percent + product_price_weight * prod_price_percent;
+		flip_percent <- flip_percent + nb_product_weight * nb_product_percent;
+		flip_percent <- flip_percent + product_link_weight * product_link_percent;
+		flip_percent <- flip_percent + bias_weight;
+		flip_percent <- flip_percent / 4;	
+	}
+	
+	action update_height {
+		write flip_percent;
+		if(flip(flip_percent)) {
+			height <- "eye";
+		} else if (flip(flip_percent)) {
+			height <- "high";
+		} else {
+			height <- "low";
+		}
+	}
 	
 	aspect default {
-		draw circle(1) color: #black;
+		draw shape color: #yellow;
 	}
 }
+
+
 species product_link parallel: true{
 	
 	aspect default {
 		draw shape color: #orange;
 	}
 }
-
-
-
-
 
 
 species counter {
@@ -752,11 +724,8 @@ experiment normal_sim type: gui {
 			
 			species pedestrian_path aspect:free_area_aspect transparency: 0.5 ;
 			species pedestrian_path refresh: false;
-			species people;
+			species people;	
 			species product_type;
-			
-			
-			
 		}
 		display friendship type: opengl{
 			species friendship_link ;
