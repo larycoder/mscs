@@ -64,7 +64,7 @@ global {
 	float P_A_pedestrian_SFM_simple parameter: true <-4.5category: "SFM simple" ;
 	
 //	float step <- 0.1;
-	int nb_people <- 200;
+	int nb_people <- 20;
 	int nb_product <- 15;
 	geometry open_area ;
 	geometry free_space <- envelope(free_spaces_shape_file);
@@ -87,13 +87,13 @@ global {
 	
 	//Time definition
 	float step <- 1 #second; 
- 	int daily <- 50000#cycle ; //cycles / day
+ 	int daily <- 1200 ; //cycles / day
  	int numberOfDays <- 0; 
  	int shopperCounts;
  	
- 	float first_customers_rate <- 0.1 ; // 10% of population
+ 	float first_customers_rate <- 0.25 ; // 10% of population
 	
-	float patienceTime_global <- 5000 #cycle;// 5.0 #minute ; 
+	float patienceTime_global <- daily #cycle;// 5.0 #minute ; 
 	string prod_at_location <- "prod_at_location";
 	string reject_prod_location <- "reject_prod_location";
 	
@@ -223,6 +223,11 @@ global {
 			
 			}
 		}
+		loop ag over: people{
+			create people_mind number:nb_people{
+			self.person <- ag;
+		}
+		}
 		
 		// Init random need shopping people with first_customers_rate
 		int need_shopping <- int(abs(first_customers_rate*nb_people));
@@ -267,10 +272,67 @@ global {
 				round_buying_people <- 0;
 			}
 			if (round > 0){
-				ask people {
-				//			write "Try re init";
-					do re_init;
+				
+				
+				loop ag over: people_mind {
+					
+					ag.friends <- ag.person.friends;
+					ag.happiness <- ag.person.happiness;
+					ag.comeback_rate <- ag.person.comeback_rate;
+					ag.comeback_rate_threshold <- ag.person.comeback_rate_threshold;
+					ag.opinion <- ag.person.opinion;
+					ask ag.person{
+						do die;
+					}
+					create ag.person  {
+						location <- any_location_in(one_of(doorIn));
+			friends <- ag.friends;
+			happiness <- ag.happiness;
+			comeback_rate <- ag.comeback_rate;
+			comeback_rate_threshold <- ag.comeback_rate_threshold;
+			opinion <- ag.opinion;
+			
+			patienceTime <- myself.patienceTime_global; 
+
+			obstacle_consideration_distance <-P_obstacle_consideration_distance;
+			pedestrian_consideration_distance <-P_pedestrian_consideration_distance;
+			shoulder_length <- P_shoulder_length;
+			avoid_other <- P_avoid_other;
+			proba_detour <- P_proba_detour;
+			
+			use_geometry_waypoint <- P_use_geometry_target;
+			tolerance_waypoint<- P_tolerance_target;
+			pedestrian_species <- [people];
+			obstacle_species<-[ wall];
+			
+			pedestrian_model <- P_model_type;
+			if (pedestrian_model = "simple") {
+				A_pedestrians_SFM <- P_A_pedestrian_SFM_simple;
+				relaxion_SFM <- P_relaxion_SFM_simple;
+				gama_SFM <- P_gama_SFM_simple;
+				lambda_SFM <- P_lambda_SFM_simple;
+				n_prime_SFM <- P_n_prime_SFM_simple;
+				n_SFM <- P_n_SFM_simple;
+			} else {
+				A_pedestrians_SFM <- P_A_pedestrian_SFM_advanced;
+				A_obstacles_SFM <- P_A_obstacles_SFM_advanced;
+				B_pedestrians_SFM <- P_B_pedestrian_SFM_advanced;
+				B_obstacles_SFM <- P_B_obstacles_SFM_advanced;
+				relaxion_SFM <- P_relaxion_SFM_advanced;
+				gama_SFM <- P_gama_SFM_advanced;
+				lambda_SFM <- P_lambda_SFM_advanced;
+				minimal_distance <- P_minimal_distance_advanced;
+				
 				}
+					}
+				
+				
+			}
+				
+//				ask people {
+//				//			write "Try re init";
+//					do re_init;
+//				}
 			}
 			round <- round + 1;
 			
@@ -291,7 +353,14 @@ species shelves {
 		draw shape color:#pink;
 	}
 }
-
+species people_mind {
+	list<people> friends;
+	float happiness <-0 min: 0.0 max:1.0;
+	float comeback_rate;
+	float comeback_rate_threshold <-0.2 min: 0.1; 
+	float opinion <- 0 max:1.0;
+	people person;
+}
 species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 	rgb color <- rnd_color(255);
 	float speed <- gauss(1,0.1) #km/#h min: 0.1 #km/#h;
@@ -309,7 +378,8 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 	
 	bool need_product <- false;
 	list<product_type> productList <- rnd(1, length(product_type)) among product_type;
-
+	
+	list<string> checkList;
 	list<point> checkProd;
 	list<string> boughtList <- [];
 	list<string> foundList <- [];
@@ -351,8 +421,8 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 	 * to a fixed distance or inside a specific geometry.
 	 */
 	perceive target: product_type where(!(each.location in checkProd)) in: view_dist  parallel: true {
-
-	if (self.name in myself.productList){
+	myself.checkList <- myself.productList collect(each.name);
+	if (self.name in myself.checkList){
 	
 		focus id: prod_at_location var: location; // belief to saw_product
 		write "prod_at_location " + location;
@@ -376,9 +446,9 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 
 		if  (comeback_rate >= comeback_rate_threshold) {
 			need_product <- true;
-			productList <- rnd(1, length(product_type)) among product_type;
+			productList <- rnd(1, 1) among product_type;
 			shopperCounts <- shopperCounts +1;
-			
+			write "productList " + productList;
 			ask counter {
 				round_shopping_people <- round_shopping_people + 1;
 				total_shopping_people <- total_shopping_people + 1;
@@ -434,6 +504,7 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 					foundList << current_product.name;
 					boughtList << current_product.name;
 					productList <- productList where(each != current_product);
+					write "boughtList " + boughtList;
 					if (length(productList)=0 and length(foundList)>0){
 						
 						do add_belief(found_all_product);
@@ -471,11 +542,10 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 					total_buying_people <- total_buying_people + 1;
 				}
 			}	
-			do remove_intention(need_leave, true);
-			shopperCounts <- shopperCounts -1;
-			do remove_intention(shopping, true);
-			do remove_intention(found_product, true); 
-			do remove_intention(choose_product, true);
+
+			write "done shopping";
+			do remove_intention(need_leave, false);
+
 			
 		}
 		else{
@@ -483,7 +553,7 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 //			write "door OUT";
 //			do goto target: target ;
 			
-			write "door OUT";
+//			write "door OUT";
 			movement <- "doorOut";
 			do moveAround;
 		}
@@ -497,7 +567,7 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 			// out of patience and bought some products do add_belief(need_pay);
 			// out of patience and bought do add_belief(need_leave);
 		
-		write "need pay";
+//		write "need pay";
 		if (shopper){
 //			target <- any_location_in(one_of(counter));
 //			do goto target: target ;
@@ -523,25 +593,26 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 			
 			do remove_belief(found_product);
 			do remove_belief(found_all_product);
-			write "paying ";
+//			write "paying ";
 //			do remove_intention(need_pay, true);
 			if not empty(boughtList) {
 				is_bought <- true;
 			}
 			ask counter {
 				loop prod over: myself.boughtList {
+					write "one_of(product_type where(each.name = prod)).price; " + one_of(product_type where(each.name = prod)).price;
 					total_revenue <- total_revenue + one_of(product_type where(each.name = prod)).price;
 				}
 			}
 		
 		payment_time <- int(counting_time +length(boughtList)*10); //cycle
-		write "payment_time " + payment_time; 
-		write "counting_time " + counting_time; 
-		write " cycle " + cycle;
+//		write "payment_time " + payment_time; 
+//		write "counting_time " + counting_time; 
+//		write " cycle " + cycle;
 		if cycle >= payment_time {
 			do add_desire(need_leave);
 			shopper <- false ; 
-			write "done paid";
+//			write "done paid";
 			do remove_intention(need_pay, true); 
 		}
 		}
@@ -551,7 +622,7 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 		searching_time <- walkinTime +patienceTime;
 		if (time > searching_time){
 //			write "loose patience";
-			do add_desire(loose_patience);
+//			do add_desire(loose_patience);
 		}
 	}
 		
@@ -617,7 +688,7 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 		
 
 		if (movement = "doorOut"){
-			write "run to door out";
+//			write "run to door out";
 			if (final_waypoint = nil) {
 			do compute_virtual_path pedestrian_graph:network target: any_location_in(one_of(doorOut)) ;
 		}
@@ -625,7 +696,7 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 		
 		}
 		if (movement = "counter") {
-			write "run to counter";
+//			write "run to counter";
 			if (final_waypoint = nil) {
 			do compute_virtual_path pedestrian_graph:network target: any_location_in(one_of(counter)) ;
 		}
@@ -742,13 +813,13 @@ experiment normal_sim type: gui {
 //			species product_type;
 //		}
 //
-//		display reputation_graph refresh: every(daily #cycle) { //refresh reputation graph daily
-//			chart "Reputation in Population" type: series {
-//				loop ag over: people {
-//					data ag.name value: ag.opinion color: #blue;
-//				}
-//			}
-//		}
+		display reputation_graph refresh: every(daily #cycle) { //refresh reputation graph daily
+			chart "Reputation in Population" type: series {
+				loop ag over: people_mind {
+					data ag.name value: ag.opinion color: #blue;
+				}
+			}
+		}
 	}
 
 }
