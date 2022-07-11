@@ -550,7 +550,7 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 		searching_time <- walkinTime +patienceTime;
 		if (time > searching_time){
 //			write "loose patience";
-			do add_desire(loose_patience);
+//			do add_desire(loose_patience);
 		}
 	}
 		
