@@ -56,7 +56,6 @@ global {
 	int total_shopping_people;
 	int total_buying_people;
 	int total_revenue;
-	map selector;
 }
 
 /*
@@ -64,6 +63,7 @@ global {
  */
 species product_owner {
 	// stategy to decide product height
+	map selector;
 	action arrange_product_height {
 		// compute flip percentage for product arrangement strategy
 		ask product_type { do update_order_param_part_1; }
@@ -90,9 +90,9 @@ species product_owner {
 				]);
 		
 		ask product_type {
-			if (price_type = (selector at "High-level")) {
+			if (price_type = (myself.selector at "High-level")) {
 				height <- "high";
-			} else if (price_type = (selector at "Eye-level")) {
+			} else if (price_type = (myself.selector at "Eye-level")) {
 				height <- "eye";
 			} else {
 				height <- "low";
