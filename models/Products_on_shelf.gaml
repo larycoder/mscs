@@ -29,7 +29,7 @@ global {
         	location <- any_location_in(world);
         }
         ready <- user_confirm("Situation",
-        							"You are the new manager of this store,the last manager was fired because the revenue of the shop was too low and and the consequence is the shop almost being closed. As a manager, it is your job to maximize the income for the shop and make it greate again.\nIn this game, your work to optimize the revenue is find a way to sort the product on the shelf in a proper way.");
+        							"You are the new manager of this store,the last manager was fired because the revenue of the shop was too low and and the consequence is the shop almost being closed. As a manager, it is your job to maximize the income for the shop and make it great again.\nIn this game, your work to optimize the revenue is find a way to sort the product on the shelf in a proper way.");
 		do quit_game(ready);
 //		ready <- user_confirm("Notification","It's your first month, learn some job");
 //		do quit_game(ready);
