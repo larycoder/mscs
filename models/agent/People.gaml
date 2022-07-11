@@ -79,6 +79,23 @@ species product_owner {
 		}
 	}
 	
+	action arrange_product_by_player {
+		string high_level <- choose("High-level", string, "cheap", ["high", "medium", "low"]);
+		string eye_level <- choose("Eye-level", string, "expensive", ["high", "medium", "low"]);
+		string low_level <- choose("Low-level", string, "medium", ["high", "medium", "low"]);
+		map selector <- user_input_dialog("Choose the strategy", [high_level, eye_level, low_level]);
+		
+		ask product_type {
+			if (price_type = (selector at "High-level")) {
+				height <- "high";
+			} else if (price_type = (selector at "Eye-level")) {
+				height <- "eye";
+			} else {
+				height <- "low";
+			}
+		}
+	}
+	
 	// link product together
 	action create_product_link {
 		loop times: length(product_type)/2 {
@@ -152,7 +169,7 @@ species people skills: [ pedestrian ] {
 		product_list <- rnd(1, length(product_type)) among product_type;
 	}
 	
-	reflex view_products {
+	reflex view_products when: not empty(product_type at_distance view_dist) {
 		list<product_type> viewed <- product_type at_distance view_dist;
 		product_type target <- one_of(viewed where(each in product_list));
 		

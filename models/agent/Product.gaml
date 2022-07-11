@@ -64,7 +64,6 @@ species product_type {
 	}
 	
 	action update_height {
-		write flip_percent;
 		if(flip(flip_percent)) {
 			height <- "eye";
 		} else if (flip(flip_percent)) {

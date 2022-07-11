@@ -54,11 +54,15 @@ global {
 			my_network <- network;
 			my_doorOut <- one_of(door where(each.door_type = DOOR_OUT));
 			location <- any_location_in(one_of(door where(each.door_type = DOOR_IN)));
-			target_product_name <- one_of(product_type).name;
 		}
 
 		ask pedestrian_path parallel: true {			
 			do build_intersection_areas pedestrian_graph: network;
+		}
+
+		ask product_owner {
+			do create_product_link;
+			do arrange_product_height;
 		}
 	}
 }
@@ -75,7 +79,7 @@ experiment simple_product_shelf {
 			species door;
 			species people aspect: advance;
 		}
-		
+
 		monitor revenue value: revenue;
 	}
 }
