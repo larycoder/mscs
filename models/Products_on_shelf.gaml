@@ -64,7 +64,7 @@ global {
 	float P_A_pedestrian_SFM_simple parameter: true <-4.5category: "SFM simple" ;
 	
 //	float step <- 0.1;
-	int nb_people <- 10;
+	int nb_people <- 200;
 	int nb_product <- 15;
 	geometry open_area ;
 	geometry free_space <- envelope(free_spaces_shape_file);
@@ -87,13 +87,13 @@ global {
 	
 	//Time definition
 	float step <- 1 #second; 
- 	int daily <- 600 ; //cycles / day
+ 	int daily <- 50000#cycle ; //cycles / day
  	int numberOfDays <- 0; 
  	int shopperCounts;
  	
  	float first_customers_rate <- 0.1 ; // 10% of population
 	
-	float patienceTime_global <- 600 #cycle;// 5.0 #minute ; 
+	float patienceTime_global <- 5000 #cycle;// 5.0 #minute ; 
 	string prod_at_location <- "prod_at_location";
 	string reject_prod_location <- "reject_prod_location";
 	
@@ -254,7 +254,7 @@ global {
 	} 
 
 	int round <- 0;
-	bool end_of_round <- false;
+	bool end_of_round <- true;
 	reflex set_end_of_round when: every(daily){
 		end_of_round <- true;
 	}
@@ -266,10 +266,11 @@ global {
 				round_shopping_people <- 0;
 				round_buying_people <- 0;
 			}
-
-			ask people {
-			//			write "Try re init";
-				do re_init;
+			if (round > 0){
+				ask people {
+				//			write "Try re init";
+					do re_init;
+				}
 			}
 			round <- round + 1;
 			
@@ -325,7 +326,7 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 	
 	float happiness <-0 min: 0.0 max:1.0;
 	
-	float comeback_rate_threshold <-0.6 min: 0.6; // as first opinion is 0.8
+	float comeback_rate_threshold <-0.2 min: 0.1; // as first opinion is 0.8
 	// probability of go shopping
 	float comeback_rate <- (float(need_product) + opinion + happiness)/3 max:1.0;
 	
