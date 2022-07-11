@@ -118,6 +118,11 @@ global {
 	float product_link_weight <- rnd(0.0, 1.0) min: 0.0 max: 1.0;
 	float bias_weight <- rnd(0.0, 1.0) min: 0.0 max: 1.0;
 	
+	// monitor shop
+	int total_shopping_people <- 0;
+	int total_buying_people <- 0;
+	int total_revenue <- 0;
+	
 	init {
 		create counter from:counter_shapefile;
 		create doorIn from:doorIn_shapefile;
@@ -241,19 +246,19 @@ global {
 	}
 	
 	// TODO: more specific pause condition
-	reflex stop when: every(daily#cycle){ // empty(people) or (shopperCounts =0)  {
-		
-		if (numberOfDays+1 >1){
-		ask people{
-//			write "Try re init";
-			do re_init;
-		} 
+	reflex stop when: every(daily #cycle) { // empty(people) or (shopperCounts =0)  {
+	if (numberOfDays + 1 > 1) {
+		ask counter {
+			round_shopping_people <- 0;
+			round_buying_people <- 0;
 		}
-		do pause;
-		
-		
-		
+		ask people {
+		//			write "Try re init";
+			do re_init;
+		}
 	}
+	do pause;
+}
 	
 	// program clock
 	reflex current_time when: every(daily#cycle) {
@@ -279,6 +284,7 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 	point friend_map <- any_location_in(world);
 	string movement <- "wander";
 	bool shopper <- false;
+	bool is_bought <- false;
 	
 	float patienceTime <-  30#minute ;
 	float walkinTime;
@@ -358,6 +364,11 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 			productList <- rnd(1, length(product_type)) among product_type;
 			shopperCounts <- shopperCounts +1;
 			
+			ask counter {
+				round_shopping_people <- round_shopping_people + 1;
+				total_shopping_people <- total_shopping_people + 1;
+			}
+			
 			do add_desire(shopping);
 			shopper <- true;
 			walkinTime <- time;
@@ -405,6 +416,9 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 				 	write "get_gold add_belief(has_gold) ";
 //					ask current_product {quantity <- quantity - 1;}	
 					// if all product is getted from this then we update belief
+					foundList << current_product.name;
+					boughtList << current_product.name;
+					productList <- productList where(each != current_product);
 					if (length(productList)=0 and length(foundList)>0){
 						
 						do add_belief(found_all_product);
@@ -436,7 +450,12 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 //		do walk ;
 		
 		if self in agents_overlapping(doorOut)  {
-			
+			if (is_bought) {
+				ask counter {
+					round_buying_people <- round_buying_people + 1;
+					total_buying_people <- total_buying_people + 1;
+				}
+			}	
 			do remove_intention(need_leave, true);
 			shopperCounts <- shopperCounts -1;
 			do remove_intention(shopping, true);
@@ -491,11 +510,14 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 			do remove_belief(found_all_product);
 			write "paying ";
 //			do remove_intention(need_pay, true);
-			
-			//TODO Hiep Optional: add value price to sale number
-			//TODO: stand and waiting for payment speed
-			// payment_time = 
-			
+			if not empty(boughtList) {
+				is_bought <- true;
+			}
+			ask counter {
+				loop prod over: myself.boughtList {
+					total_revenue <- total_revenue + one_of(product_type where(each.name = prod)).price;
+				}
+			}
 		
 		payment_time <- int(counting_time +length(boughtList)*10); //cycle
 		write "payment_time " + payment_time; 
