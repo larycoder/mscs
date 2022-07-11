@@ -24,10 +24,11 @@ global {
 
 	// number of agents
 	int nb_people <- 5;
-	int nb_product <- 10;
 	
 	// simulation setup
-	float step <- 0.1;
+	float step <- 1 #second;
+	int daily <- 600;
+	int number_of_day <- 0;
 	
 	init {
 		create floors from: open_area_file;
@@ -36,6 +37,7 @@ global {
 		create wall from: wall_shape_file;
 		create door from: door_in_shape_file { door_type <- DOOR_IN; }
 		create door from: door_out_shape_file { door_type <- DOOR_OUT; }
+		create product_owner number: 1;
 	
 		create pedestrian_path from: pedestrian_paths_file {
 			list<geometry> fs <- free_spaces_shape_file overlapping self;
@@ -43,7 +45,7 @@ global {
 		}
 		network <- as_edge_graph(pedestrian_path); // load walking network
 		
-		create store_product from: product_data_file {
+		create product_type from: product_data_file {
 			location <- any_location_in(one_of(shelf));
 		}
 
@@ -52,7 +54,7 @@ global {
 			my_network <- network;
 			my_doorOut <- one_of(door where(each.door_type = DOOR_OUT));
 			location <- any_location_in(one_of(door where(each.door_type = DOOR_IN)));
-			target_product_name <- one_of(store_product).name;
+			target_product_name <- one_of(product_type).name;
 		}
 
 		ask pedestrian_path parallel: true {			
@@ -69,7 +71,7 @@ experiment simple_product_shelf {
 			species wall refresh: false;
 			species counter refresh: false;
 			species shelf;
-			species store_product;
+			species product_type;
 			species door;
 			species people aspect: advance;
 		}
