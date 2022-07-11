@@ -12,6 +12,7 @@ model Productsonshelf
 
 global {
     file my_file <- csv_file("./includes/product.csv",',',string,true);
+    int daily <- 600#cycle;
     map stratergy_selection;
     bool end_of_round <- false;
     int current_round <- 0;
@@ -57,6 +58,9 @@ global {
 			do die;
 		}
 	} 
+	reflex set_end_of_round when: every(daily){
+		end_of_round <- true;
+	}
 	reflex update_round when: end_of_round{
 		if(current_round < 10){
 			current_round <- current_round + 1;
@@ -65,22 +69,16 @@ global {
 					choose("Eye-level",string,"expensive", ["expensive","medium","cheap"]),
 					choose("Low-level",string,"medium", ["expensive","medium","cheap"])
 				]);
+			current_round_revenue <- current_round_revenue + 100;
+			end_of_round <- false;
 		}
 		else {
 			do pause;
 		}
 	}
+	
 }
 
-species button {
-	rgb color;
-	geometry shape <- square(20);
-	
-	aspect default {
-		draw shape color: color;
-		draw around(1,shape) color: #red;
-	}
-}
 species products{
 	int id;
 	string name;
@@ -120,7 +118,7 @@ experiment test type:gui{
 					data "Total revenue" value: total_revenue/1000 color:#grey;
 				}
 		}
-		display "Round status" refresh:end_of_round{
+		display "Round status" refresh:every(daily){
 			chart "Past information" type:series
 									x_label:''
 			 						y_label:'' {
