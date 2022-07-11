@@ -14,6 +14,8 @@ import "Product.gaml"
 /* Insert your model definition here */
 
 global {
+	shape_file counter_shape_file <- shape_file("../results/counter.shp");
+
 	geometry shape <- envelope(wall_shape_file);
 
 	// pedestrian strategy parameters
@@ -54,6 +56,11 @@ global {
 	predicate need_pay <- new_predicate ("picked some products");
 	predicate need_leave <- new_predicate ("leave");
 	predicate spread_rumors <- new_predicate ("recommend to friends");
+	
+	// shop monitor
+	int total_shopping_people;
+	int total_buying_people;
+	int total_revenue;
 }
 
 /*
@@ -113,7 +120,18 @@ species product_owner {
 }
 
 
-species people skills: [ pedestrian ] {
+species counter {
+	int round_shopping_people;
+	int round_buying_people;
+	int round_revenue;
+
+	aspect default {
+		draw shape color: rgb (128, 64, 3) border: #red;
+	}
+}
+
+
+species people skills: [ pedestrian ] control: simple_bdi {
 	// person attribute parameter
 	rgb color <- #blue;
 	geometry shape <- circle(10);
@@ -132,8 +150,9 @@ species people skills: [ pedestrian ] {
 	
 	// buying activity
 	list<product_type> product_list;
-
-	bool need_shopping <- true;
+	
+	// my friend
+	list<people> friends;
 	
 	init {
 		// pedestrian setup
@@ -221,6 +240,7 @@ species people skills: [ pedestrian ] {
 }
 
 experiment people_agent {
+	// TODO: counter and proudct_owner
 	init {
 		create people number: 10;
 	}

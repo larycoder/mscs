@@ -11,7 +11,6 @@ model Background
 /* Insert your model definition here */
 
 global {
-	shape_file counter_shape_file <- shape_file("../results/counter.shp");
 	shape_file pedestrian_paths_file <- shape_file("../results/pedestrian paths.shp");
 	shape_file open_area_file <- shape_file("../results/open area.shp");
 	shape_file free_spaces_shape_file <- shape_file("../results/free spaces.shp");
@@ -71,15 +70,8 @@ species door {
 	}
 }
 
-species counter {
-	aspect default {
-		draw shape color: rgb (128, 64, 3) border: #red;
-	}
-}
-
 experiment background {
 	init {
-		create counter from: counter_shape_file;
 		create pedestrian_path from: pedestrian_paths_file;
 		create floors from: open_area_file;
 		create shelf from: shelves_shape_file;
@@ -93,7 +85,6 @@ experiment background {
 			species floors;
 			species pedestrian_path;
 			species wall;
-			species counter;
 			species shelf;
 			species door;
 		}

@@ -63,6 +63,7 @@ global {
 		ask product_owner {
 			do create_product_link;
 			do arrange_product_height;
+			//do arrange_product_by_player;
 		}
 	}
 }
