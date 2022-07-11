@@ -126,7 +126,7 @@ species counter {
 }
 
 
-species people skills: [ pedestrian ] {
+species dummy_people skills: [ pedestrian ] {
 	// person attribute parameter
 	rgb color <- #blue;
 	geometry shape <- circle(10);
@@ -149,13 +149,15 @@ species people skills: [ pedestrian ] {
 	bool is_leave <- false;
 	list<product_type> product_list;
 
-	// emotion (comming soon)
+	// emotion
+	// TODO: comming soon
 	float opinion <- 0.0;
 	float happiness <- 0.0;
 	float comeback_rate_threshold <- 0.7;
 	
 	// my friend
-	list<people> friends;
+	// TODO: comming soon
+	list<dummy_people> friends;
 	
 	init {
 		// pedestrian setup
@@ -166,7 +168,7 @@ species people skills: [ pedestrian ] {
 		proba_detour <- P_proba_detour;
 		use_geometry_waypoint <- P_use_geometry_target;
 		tolerance_waypoint<- P_tolerance_target;
-		pedestrian_species <- [people];
+		pedestrian_species <- [dummy_people];
 		obstacle_species<-[ wall];		
 		pedestrian_model <- P_model_type;	
 		if (pedestrian_model = "simple") {
@@ -276,12 +278,12 @@ species people skills: [ pedestrian ] {
 experiment people_agent {
 	// TODO: counter and proudct_owner
 	init {
-		create people number: 10;
+		create dummy_people number: 10;
 	}
 	
 	output {
 		display people_agent {
-			species people;	
+			species dummy_people;	
 		}
 	}
 }
