@@ -15,14 +15,14 @@ global {
     int daily <- 600#cycle;
     map stratergy_selection;
     bool end_of_round <- false;
-    int current_round <- 0;
+    int round <- 0;
     int current_score <- 100;
-    int total_came_client <- 1000;
-    int total_served_client <- 600;
+    int total_shopping_people <- 1000;
+    int total_buying_people <- 600;
     int total_revenue <- 330;
-    int current_round_came_client <- 0;
-    int current_round_served_client <- 0;
-    int current_round_revenue <- 0;
+    int round_shopping_people <- 0;
+    int round_buying_people <- 0;
+    int round_revenue <- 0;
     float avg_happiness <- 100.0;
     bool ready <- false;
 	init {
@@ -62,14 +62,14 @@ global {
 		end_of_round <- true;
 	}
 	reflex update_round when: end_of_round{
-		if(current_round < 10){
-			current_round <- current_round + 1;
+		if(round < 10){
+			round <- round + 1;
 			stratergy_selection <- user_input_dialog("Choose the strategy",[
 					choose("High-level",string,"cheap", ["expensive","medium","cheap"]),
 					choose("Eye-level",string,"expensive", ["expensive","medium","cheap"]),
 					choose("Low-level",string,"medium", ["expensive","medium","cheap"])
 				]);
-			current_round_revenue <- current_round_revenue + 100;
+			round_revenue <- round_revenue + 100;
 			end_of_round <- false;
 		}
 		else {
@@ -96,15 +96,15 @@ experiment test type:gui{
 		display main_stage refresh: end_of_round{
 			
 			graphics "Stats"{
-				draw "Round: "+current_round+"/10" at: {10,10} color: #green;
+				draw "Round: "+round+"/10" at: {10,10} color: #green;
 				draw "High-level: "+ string(stratergy_selection at "High-level") at: {20,20} color: #red;
 				draw "Eye-level: "+ string(stratergy_selection at "Eye-level") at: {20,25} color: #red;
 				draw "Low-level: "+ string(stratergy_selection at "Low-level") at: {20,30} color: #red;
 				
 //				draw "Current round status" at: {0,140} color: #red;
-//				draw "Came client: "+ current_round_came_client at: {20,160} color: #red;
-//				draw "Served client: "+ current_round_served_client at: {20,170} color: #red;
-//				draw "Revenue: "+ current_round_revenue at: {20,180} color: #red;
+//				draw "Came client: "+ tround_shopping_people at: {20,160} color: #red;
+//				draw "Served client: "+ round_buying_people at: {20,170} color: #red;
+//				draw "Revenue: "+ round_revenue at: {20,180} color: #red;
 				
 				draw "Score: "+ current_score at: {70,10} color: #black;
 			}
@@ -113,8 +113,8 @@ experiment test type:gui{
 			chart "Total status" type:histogram 
 									x_label:''
 			 						y_label:'' {
-					data "Total came client" value: total_came_client color:#blue;
-					data "Total served client" value: total_served_client color:#yellow;
+					data "Total came client" value: total_shopping_people color:#blue;
+					data "Total served client" value: total_buying_people color:#yellow;
 					data "Total revenue" value: total_revenue/1000 color:#grey;
 				}
 		}
@@ -122,9 +122,9 @@ experiment test type:gui{
 			chart "Past information" type:series
 									x_label:''
 			 						y_label:'' {
-					data "Total came client" value: current_round_came_client  color:#blue;
-					data "Total served client" value: current_round_served_client color:#yellow; 
-					data "Total revenue" value: current_round_revenue/1000 color:#grey;
+					data "Total came client" value: round_shopping_people  color:#blue;
+					data "Total served client" value: round_buying_people color:#yellow; 
+					data "Total revenue" value: round_revenue/1000 color:#grey;
 				}
 		}
 		display "Happiness"{
