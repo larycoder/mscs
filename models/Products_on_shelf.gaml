@@ -64,7 +64,7 @@ global {
 	float P_A_pedestrian_SFM_simple parameter: true <-4.5category: "SFM simple" ;
 	
 //	float step <- 0.1;
-	int nb_people <- 200;
+	int nb_people <- 20;
 	int nb_product <- 15;
 	geometry open_area ;
 	geometry free_space <- envelope(free_spaces_shape_file);
@@ -87,13 +87,13 @@ global {
 	
 	//Time definition
 	float step <- 1 #second; 
- 	int daily <- 50000#cycle ; //cycles / day
+ 	int daily <- 1200 ; //cycles / day
  	int numberOfDays <- 0; 
  	int shopperCounts;
  	
- 	float first_customers_rate <- 0.1 ; // 10% of population
+ 	float first_customers_rate <- 0.25 ; // 10% of population
 	
-	float patienceTime_global <- 5000 #cycle;// 5.0 #minute ; 
+	float patienceTime_global <- daily #cycle;// 5.0 #minute ; 
 	string prod_at_location <- "prod_at_location";
 	string reject_prod_location <- "reject_prod_location";
 	
@@ -471,11 +471,10 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 					total_buying_people <- total_buying_people + 1;
 				}
 			}	
-			do remove_intention(need_leave, true);
-			shopperCounts <- shopperCounts -1;
-			do remove_intention(shopping, true);
-			do remove_intention(found_product, true); 
-			do remove_intention(choose_product, true);
+
+			write "done shopping";
+			do remove_intention(need_leave, false);
+
 			
 		}
 		else{
@@ -483,7 +482,7 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 //			write "door OUT";
 //			do goto target: target ;
 			
-			write "door OUT";
+//			write "door OUT";
 			movement <- "doorOut";
 			do moveAround;
 		}
@@ -497,7 +496,7 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 			// out of patience and bought some products do add_belief(need_pay);
 			// out of patience and bought do add_belief(need_leave);
 		
-		write "need pay";
+//		write "need pay";
 		if (shopper){
 //			target <- any_location_in(one_of(counter));
 //			do goto target: target ;
@@ -523,7 +522,7 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 			
 			do remove_belief(found_product);
 			do remove_belief(found_all_product);
-			write "paying ";
+//			write "paying ";
 //			do remove_intention(need_pay, true);
 			if not empty(boughtList) {
 				is_bought <- true;
@@ -535,13 +534,13 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 			}
 		
 		payment_time <- int(counting_time +length(boughtList)*10); //cycle
-		write "payment_time " + payment_time; 
-		write "counting_time " + counting_time; 
-		write " cycle " + cycle;
+//		write "payment_time " + payment_time; 
+//		write "counting_time " + counting_time; 
+//		write " cycle " + cycle;
 		if cycle >= payment_time {
 			do add_desire(need_leave);
 			shopper <- false ; 
-			write "done paid";
+//			write "done paid";
 			do remove_intention(need_pay, true); 
 		}
 		}
@@ -617,7 +616,7 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 		
 
 		if (movement = "doorOut"){
-			write "run to door out";
+//			write "run to door out";
 			if (final_waypoint = nil) {
 			do compute_virtual_path pedestrian_graph:network target: any_location_in(one_of(doorOut)) ;
 		}
@@ -625,7 +624,7 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 		
 		}
 		if (movement = "counter") {
-			write "run to counter";
+//			write "run to counter";
 			if (final_waypoint = nil) {
 			do compute_virtual_path pedestrian_graph:network target: any_location_in(one_of(counter)) ;
 		}
