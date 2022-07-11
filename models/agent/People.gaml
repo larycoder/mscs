@@ -193,7 +193,7 @@ species dummy_people skills: [ pedestrian ] {
 		product_list <- rnd(1, length(product_type)) among product_type;
 	}
 	
-	reflex view_products when: not empty(product_type at_distance view_dist) {
+	reflex view_products when: not empty(product_type at_distance view_dist) and not empty(product_list) {
 		list<product_type> viewed <- product_type at_distance view_dist;
 		product_type target <- one_of(viewed where(each in product_list));
 		if target != nil {
