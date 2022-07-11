@@ -8,6 +8,8 @@
 
 model Productsonshelf
 
+import "agent/People.gaml"
+
 /* Insert your model definition here */
 /*
  * Description:
@@ -264,35 +266,9 @@ global {
 	
 }
 
-species pedestrian_path skills: [pedestrian_road]{
-	aspect default { 
-		draw shape  color: #gray;
-	}
-	aspect free_area_aspect {
-		if(display_free_space and free_space != nil) {
-			draw free_space color: #lightpink border: #black;
-		}
-		
-	}
-}
-
 species shelves {
 	aspect default {
 		draw shape color:#pink;
-	}
-}
-
-species wall {
-	
-	geometry free_space;
-	float high <- rnd(10.0, 20.0);
-	
-	aspect demo {
-		draw shape border: #black depth: high texture: ["../includes/top.png","../includes/texture5.jpg"];
-	}
-	
-	aspect default {
-		draw shape + (P_shoulder_length/2.0) color: #gray border: #black;
 	}
 }
 
@@ -690,81 +666,6 @@ species socialLinkRepresentation{
 }
 
 
-species product_type parallel: true {
-	
-	int id;
-	string name;
-	string price_type;
-	int price;
-	int linked_id; // deprecated
-	list<product_type> my_links;
-		
-	// Eye-level > top-level > lower-level
-	float height_chance <- 0.5; //default a random chance of buying	
-
-	// Height must in list ["high", "eye", "low"]
-	string height;
-	
-	// Product arrangement strategy parameter
-	float prod_price_percent;
-	float nb_product_percent;
-	float product_link_percent;
-	float flip_percent <- 0.0;
-	
-	// basic params	
-	action update_order_param_part_1 {
-		prod_price_percent <- price / sum(product_type collect each.price);
-		nb_product_percent <- length(product_type where(each.name = self.name)) / length(product_type);
-	}
-	
-	// advance params
-	action update_order_param_part_2 { // should be call after all products are created
-		product_link_percent <- (prod_price_percent + sum(my_links collect each.prod_price_percent)) / (length(my_links) + 1);	
-		flip_percent <- flip_percent + product_price_weight * prod_price_percent;
-		flip_percent <- flip_percent + nb_product_weight * nb_product_percent;
-		flip_percent <- flip_percent + product_link_weight * product_link_percent;
-		flip_percent <- flip_percent + bias_weight;
-		flip_percent <- flip_percent / 4;	
-	}
-	
-	action update_height {
-		write flip_percent;
-		if(flip(flip_percent)) {
-			height <- "eye";
-		} else if (flip(flip_percent)) {
-			height <- "high";
-		} else {
-			height <- "low";
-		}
-	}
-	
-	aspect default {
-		draw circle(0.7) color: #black;
-	}
-}
-
-
-species product_link parallel: true{
-	
-	aspect default {
-		draw shape color: #orange;
-	}
-}
-
-species counter {
-	aspect default {
-		draw shape color: rgb (128, 64, 3) border: #red;
-	}
-}
-
-species floors {
-	
-//	float capacity;
-	aspect default {
-		draw shape color:#pink;
-	}
-}
-
 species doorIn {
 	aspect default {
 		draw shape border:#black color:#green;
@@ -778,40 +679,40 @@ species doorOut {
 }
 
 
-
 experiment normal_sim type: gui {
 	float minimum_cycle_duration <- 0.02;
-		output {
-		display map type: opengl{
-//			species floors aspect: default;
+	output {
+		display map type: opengl {
+		//			species floors aspect: default;
 			species wall refresh: false;
 			species shelves aspect: default;
-			
 			species counter aspect: default;
 			species doorIn aspect: default;
 			species doorOut aspect: default;
-			
-			species pedestrian_path aspect:free_area_aspect transparency: 0.5 ;
+//			species pedestrian_path aspect: free_area_aspect transparency: 0.5;
 			species pedestrian_path refresh: false;
-			species people;	
+			species people;
 			species product_type;
 		}
-		display friendship type: opengl{
-			species friendship_link ;
-			species people aspect: friends_default;
-			}
-		display product_type type: opengl{
-			species product_link ;
-			species product_type;
-			}
-		display reputation_graph refresh: every(daily#cycle) { //refresh reputation graph daily
-			
-			chart "Reputation in Population" type: series  {
-			loop ag over: people  {
-				data ag.name value: ag.opinion color: #blue;
-		}
-		}
-			}
+
+//		display friendship type: opengl {
+//			species friendship_link;
+//			species people aspect: friends_default;
+//		}
+//
+//		display product_type type: opengl {
+//			species product_link;
+//			species product_type;
+//		}
+//
+//		display reputation_graph refresh: every(daily #cycle) { //refresh reputation graph daily
+//			chart "Reputation in Population" type: series {
+//				loop ag over: people {
+//					data ag.name value: ag.opinion color: #blue;
+//				}
+//			}
+//		}
 	}
+
 }
  

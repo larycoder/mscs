@@ -27,6 +27,8 @@ global {
 	
 	// store owner
 	int revenue <- 0;
+	
+	float P_shoulder_length <- 0.45 parameter: true;
 }
 
 species pedestrian_path skills: [pedestrian_road] {
@@ -56,9 +58,16 @@ species shelf {
 	}
 }
 
-species wall {
+species wall {	
+	geometry free_space;
+	float high <- rnd(10.0, 20.0);
+	
+	aspect demo {
+		draw shape border: #black depth: high texture: ["../includes/top.png","../includes/texture5.jpg"];
+	}
+	
 	aspect default {
-		draw shape color: #gray border: #black;
+		draw shape + (P_shoulder_length/2.0) color: #gray border: #black;
 	}
 }
 
