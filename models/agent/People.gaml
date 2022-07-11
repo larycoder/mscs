@@ -49,13 +49,8 @@ global {
 	bool display_target <- false;
 	bool display_force <- false;
 	
-	// person predicate
-	predicate shopping <- new_predicate(" have target product ");
-	predicate found_product <- new_predicate("found all target product");
-	predicate loose_patience <- new_predicate("cannot found target product");
-	predicate need_pay <- new_predicate ("picked some products");
-	predicate need_leave <- new_predicate ("leave");
-	predicate spread_rumors <- new_predicate ("recommend to friends");
+	// person	
+	int daily <- 600;
 	
 	// shop monitor
 	int total_shopping_people;
@@ -131,25 +126,33 @@ species counter {
 }
 
 
-species people skills: [ pedestrian ] control: simple_bdi {
+species people skills: [ pedestrian ] {
 	// person attribute parameter
 	rgb color <- #blue;
 	geometry shape <- circle(10);
-	float speed <- gauss(1, 0.1) #km/#h min: 0.1 #km/#h;
+	float speed <- 1 #km/#h min: 1 #km/#h;
 	
 	// store parameter
 	geometry my_open_area <- nil;
 	graph my_network <- nil;
 	door my_doorOut <- nil;
+	door my_doorIn <- nil;
 	
 	// shopping attribute
 	float walkinTime <- 0.0;
 	float patience_time <- 24 #hour;
 	float view_dist <- 3.0;
-	bool current_status;
 	
 	// buying activity
+	bool is_bought <- false;
+	bool is_shopping <- false;
+	bool is_leave <- false;
 	list<product_type> product_list;
+
+	// emotion (comming soon)
+	float opinion <- 0.0;
+	float happiness <- 0.0;
+	float comeback_rate_threshold <- 0.7;
 	
 	// my friend
 	list<people> friends;
@@ -191,21 +194,52 @@ species people skills: [ pedestrian ] control: simple_bdi {
 	reflex view_products when: not empty(product_type at_distance view_dist) {
 		list<product_type> viewed <- product_type at_distance view_dist;
 		product_type target <- one_of(viewed where(each in product_list));
-		
-		// TODO: do something with viewed product
+		if target != nil {
+			product_list <- product_list where(each != target);
+			ask counter {
+				round_revenue <- round_revenue + target.price;
+				total_revenue <- total_revenue + target.price;
+				myself.is_bought <- true;
+			}
+		}
 	}
 
 	reflex move {
-		if (walkinTime != nil and time > walkinTime + patience_time) {
+		if ((walkinTime != nil and time > walkinTime + patience_time) or empty(product_list)) {
 			if (final_waypoint = nil) {
 				do compute_virtual_path pedestrian_graph: my_network target: any_location_in(one_of(my_doorOut));
 			}
-			do walk;
+			is_shopping <- false;
 		} else {
 			if (final_waypoint = nil) {
 				do compute_virtual_path pedestrian_graph: my_network target: any_location_in(my_open_area);
 			}
-			do walk;
+		}
+		do walk;
+	}
+	
+	reflex leave when: not is_shopping and not is_leave {
+		is_leave <- true;
+		ask counter {
+			if (myself.is_bought) {
+				round_buying_people <- round_buying_people + 1;
+				total_buying_people <- total_buying_people + 1;
+			}
+		}
+	}
+	
+	reflex comeback when: every(daily#cycle) {
+		if (flip(0.5)) {
+			location <- any_location_in(my_doorIn);
+			is_bought <- false;
+			is_leave <- false;
+			is_shopping <- true;
+			walkinTime <- time;
+			product_list <- rnd(1, length(product_type)) among product_type;
+			ask counter {
+				round_shopping_people <- round_shopping_people + 1;
+				total_shopping_people <- total_shopping_people + 1;
+			}			
 		}
 	}
 

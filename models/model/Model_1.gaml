@@ -53,6 +53,7 @@ global {
 			my_open_area <- open_area;
 			my_network <- network;
 			my_doorOut <- one_of(door where(each.door_type = DOOR_OUT));
+			my_doorOut <- one_of(door where(each.door_type = DOOR_IN));
 			location <- any_location_in(one_of(door where(each.door_type = DOOR_IN)));
 		}
 
@@ -81,6 +82,8 @@ experiment simple_product_shelf {
 			species people aspect: advance;
 		}
 
-		monitor revenue value: revenue;
+		monitor revenue value: total_revenue;
+		monitor shopping_people value: total_shopping_people;
+		monitor buying_people value: total_buying_people;
 	}
 }
