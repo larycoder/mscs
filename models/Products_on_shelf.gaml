@@ -107,7 +107,7 @@ global {
 	predicate loose_patience <- new_predicate("cannot found target product");
 	predicate need_pay <- new_predicate ("picked some products");
 	predicate need_leave <- new_predicate ("leave");
-	predicate spread_rumors <- new_predicate ("recommend to friends");
+	
 	
 	init {
 		create counter from:counter_shapefile;
@@ -314,6 +314,7 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 		
 	}
 	
+	// To be called daily
 	action re_init {
 		write "re-init people";
 		walkinTime <- nil;
@@ -350,6 +351,7 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 	rule belief: need_leave new_desire: need_leave strength: 6.0;
 
 	
+	// Comeback formula, start calculate daily
 	reflex comeback when: every(daily#cycle){
 
 		comeback_rate <- (int(need_product) + opinion + happiness)/3;
@@ -432,19 +434,10 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 				target <- nil;
 			}}	}
 	
-
+	//go to doorOut
 	plan leave intention: need_leave {
-//		movement <- "counter";
-//		do moveAround;
-
-//		write "run to door out";
-//		if (final_waypoint = nil) {
-//		do compute_virtual_path pedestrian_graph:network target: any_location_in(one_of(doorOut)) ;
-//		}
-//		do walk ;
 		
 		if self in agents_overlapping(doorOut)  {
-			
 			do remove_intention(need_leave, true);
 			shopperCounts <- shopperCounts -1;
 			do remove_intention(shopping, true);
@@ -453,10 +446,6 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 			
 		}
 		else{
-//			target <- any_location_in(one_of(doorOut));
-//			write "door OUT";
-//			do goto target: target ;
-			
 			write "door OUT";
 			movement <- "doorOut";
 			do moveAround;
@@ -467,28 +456,11 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 	}
 	
 	plan pay intention: need_pay {
-		// if run out of patience time do add_belief(loose_patience);
-			// out of patience and bought some products do add_belief(need_pay);
-			// out of patience and bought do add_belief(need_leave);
-		
 		write "need pay";
 		if (shopper){
-//			target <- any_location_in(one_of(counter));
-//			do goto target: target ;
-			
 			movement <- "counter";
 			do moveAround;
 		}
-		
-		
-//		movement <- "counter";
-//		do moveAround;
-
-//		write "run to counter";
-//		if (final_waypoint = nil) {
-//		do compute_virtual_path pedestrian_graph:network target: any_location_in(one_of(counter)) ;
-//		}
-//		do walk ;
 			
 		if  self in agents_overlapping(counter) {// (target distance_to location)<=1  {
 			if counting_time =0 or counting_time =nil {
@@ -498,14 +470,8 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 			do remove_belief(found_product);
 			do remove_belief(found_all_product);
 			write "paying ";
-//			do remove_intention(need_pay, true);
-			
-			//TODO Hiep Optional: add value price to sale number
-			//TODO: stand and waiting for payment speed
-			// payment_time = 
-			
 		
-		payment_time <- int(counting_time +length(boughtList)*10); //cycle
+		payment_time <- counting_time +length(boughtList)*10; //cycle
 		write "payment_time " + payment_time; 
 		write "counting_time " + counting_time; 
 		write " cycle " + cycle;
@@ -521,15 +487,11 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 	reflex search_time {
 		searching_time <- walkinTime +patienceTime;
 		if (time > searching_time){
-//			write "loose patience";
 			do add_desire(loose_patience);
 		}
 	}
 		
 	plan keepPatience intention: loose_patience {
-		// if run out of patience time do add_belief(loose_patience);
-			// out of patience and bought some products do add_belief(need_pay);
-			// out of patience and bought do add_belief(need_leave);
 		if length(boughtList) >0{
 			do add_desire(need_pay);
 			do remove_belief(shopping);
@@ -543,20 +505,17 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 		}
 	}
 	
-	plan recommend intention: spread_rumors instantaneous: true{
-//		list<people> my_friends <- list<people>((social_link_base where (each.liking > 0)) collect each.agent);
-		write "spread_rumors";
-		
-		do spreadRumors;
-
-		do remove_intention(spread_rumors, true); 
-	}
-	
-	
+	//Run this every day to re-calculate dynamic
 	reflex everyday_calculation when: every(daily#cycle) and cycle >10 {
 		write "everyday_calculation ";
 		// happiness
-		float searchingTime <-  (foundTime - walkinTime)/patienceTime;
+		float searchingTime ; 
+		if (foundTime = nil or foundTime =0){
+			searchingTime <- 1.0;
+		}else{
+			 searchingTime <-  (foundTime - walkinTime)/patienceTime; // Time to found all product - time start shopping
+		}
+		
 		float paymentTime <- payment_time/patienceTime;
 		
 		float bought_per_shoppingList ;
@@ -570,6 +529,8 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 		
 		//TODO Update sale numbers
 	} 
+	
+	// Doing rumors model
 	action spreadRumors {
 		ask friends{
 			if(abs(myself.opinion-opinion) < rumor_threshold ){ //only influence if there is a opinion difference
@@ -581,9 +542,7 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 		}
 	}
 	
-	
-	
-
+	// Doing pedestrian model
 	action moveAround {
 		
 
