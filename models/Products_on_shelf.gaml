@@ -39,7 +39,7 @@ experiment output_on_time {
 
 	output {
 		display "product_order_revenue" {
-			chart "output_on_time" type: series {	
+			chart "output_on_time" type: series {
 				data "revenue" value: total_revenue / 1000 color: #red;
 				data "shopping_people" value: total_shopping_people color: #brown;
 				data "buying_people" value: total_buying_people color: #green;
