@@ -293,7 +293,7 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 	list<string> boughtList <- [];
 	list<string> foundList <- [];
 	int found_number <-0;
-	
+	float foundTime ;
 //	string current_status;
 	float view_dist<-5.0; //dist seeing the product
 	float pick_dist<-1.0; //dist to pick the product
@@ -303,7 +303,7 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 	float rumor_threshold <-0.2;	
 	float opinion <- 0 max:1.0;
 	
-	float happiness <-0 max:1.0;
+	float happiness <-0 min: 0.0 max:1.0;
 	
 	float comeback_rate_threshold <-0.6 min: 0.6; // as first opinion is 0.8
 	// probability of go shopping
@@ -362,6 +362,7 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 			
 			do add_desire(shopping);
 			shopper <- true;
+			walkinTime <- time;
 		}
 	}
 	
@@ -415,6 +416,7 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 					if (length(productList)=0 and length(foundList)>0){
 						
 						do add_belief(found_all_product);
+						foundTime <- time;
 						do remove_belief(found_product);
 						do remove_belief(shopping);
 						do remove_intention(found_product, true);
@@ -551,6 +553,23 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 	}
 	
 	
+	reflex everyday_calculation when: every(daily#cycle) and cycle >10 {
+		write "everyday_calculation ";
+		// happiness
+		float searchingTime <-  (foundTime - walkinTime)/patienceTime;
+		float paymentTime <- payment_time/patienceTime;
+		
+		float bought_per_shoppingList ;
+		if (length(boughtList) = 0){
+			bought_per_shoppingList <- 0;
+		}else{bought_per_shoppingList <- (1.0 - length(productList)/length(boughtList));}
+		
+		happiness <- bought_per_shoppingList - paymentTime - searchingTime;
+		
+		do spreadRumors;
+		
+		//TODO Update sale numbers
+	} 
 	action spreadRumors {
 		ask friends{
 			if(abs(myself.opinion-opinion) < rumor_threshold ){ //only influence if there is a opinion difference
@@ -558,8 +577,6 @@ species people skills: [pedestrian, moving] parallel: true control:simple_bdi{
 			// influencing formulae
 			opinion <- opinion + converge*(myself.happiness-opinion);
 			myself.opinion <- myself.opinion + converge*abs(myself.opinion-temp);
-			
-			do add_intention(travel_to_shop); // action of recommendation travel_to_shop will calculate need to shopping
 			}
 		}
 	}
