@@ -13,7 +13,7 @@ model Productsonshelf
 global {
     file my_file <- csv_file("./includes/product.csv",',',string,true);
     map stratergy_selection;
-    bool end_of_round <- true;
+    bool end_of_round <- false;
     int current_round <- 0;
     int current_score <- 100;
     int total_came_client <- 1000;
@@ -22,7 +22,7 @@ global {
     int current_round_came_client <- 0;
     int current_round_served_client <- 0;
     int current_round_revenue <- 0;
-    float avg_happiness <- 100;
+    float avg_happiness <- 100.0;
     bool ready <- false;
 	init {
         create products from: my_file{
