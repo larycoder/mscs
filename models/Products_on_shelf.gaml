@@ -830,9 +830,9 @@ experiment test type:gui{
 			
 			graphics "Stats"{
 				draw "Round: "+round+"/10" at: {10,10} color: #green;
-				draw "High-level: "+ string(selector at "High-level") at: {20,20} color: #red;
-				draw "Eye-level: "+ string(selector at "Eye-level") at: {20,25} color: #red;
-				draw "Low-level: "+ string(selector at "Low-level") at: {20,30} color: #red;
+				//draw "High-level: "+ string(selector at "High-level") at: {20,20} color: #red;
+				//draw "Eye-level: "+ string(selector at "Eye-level") at: {20,25} color: #red;
+				//draw "Low-level: "+ string(selector at "Low-level") at: {20,30} color: #red;
 				
 //				draw "Current round status" at: {0,140} color: #red;
 //				draw "Came client: "+ tround_shopping_people at: {20,160} color: #red;
