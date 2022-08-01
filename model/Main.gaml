@@ -6,9 +6,9 @@
 */
 
 
-model Productsonshelf
+model Main
 
-import "agent/People.gaml"
+import "People.gaml"
 
 /* Insert your model definition here */
 /*
