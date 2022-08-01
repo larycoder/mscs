@@ -22,12 +22,12 @@ import "People.gaml"
 
 
 global {
-	file product_data_file <- csv_file("includes/product.csv", ",", string, true);
-	shape_file open_area_shape_file <- shape_file("results/open area.shp");
-	shape_file wall_shapefile <- shape_file("results/walls.shp");
-	shape_file pedestrian_paths_shape_file <- shape_file("results/pedestrian paths.shp");
-	shape_file shelves_shapefile <- shape_file("results/shelves.shp");
-	shape_file free_spaces_shape_file <- shape_file("results/free spaces.shp");
+	file product_data_file <- csv_file("../includes/product.csv", ",", string, true);
+	shape_file open_area_shape_file <- shape_file("../results/open area.shp");
+	shape_file wall_shapefile <- shape_file("../results/walls.shp");
+	shape_file pedestrian_paths_shape_file <- shape_file("../results/pedestrian paths.shp");
+	shape_file shelves_shapefile <- shape_file("../results/shelves.shp");
+	shape_file free_spaces_shape_file <- shape_file("../results/free spaces.shp");
 	graph network;
 	geometry shape <- envelope(wall_shapefile);
 
@@ -73,10 +73,10 @@ global {
 	graph friendship_graph <- graph([]);
 	graph product_graph <- graph([]);
 	
-	file counter_shapefile <- file("results/counter.shp");
-	file doorIn_shapefile <- file("results/doorin.shp");
-	file doorOut_shapefile <- file("results/doorout.shp");
-	file floor_shapefile <- file("results/floor.shp");
+	file counter_shapefile <- file("../results/counter.shp");
+	file doorIn_shapefile <- file("../results/doorin.shp");
+	file doorOut_shapefile <- file("../results/doorout.shp");
+	file floor_shapefile <- file("../results/floor.shp");
 	
 	
 	geometry shape_counter <- envelope(counter_shapefile);
