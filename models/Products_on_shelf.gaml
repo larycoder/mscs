@@ -1,7 +1,7 @@
 /**
 * Name: Productsonshelf
 * Based on the internal empty template. 
-* Author: Son Ngoc Nguyen
+* Author: group 2
 * Tags: 
 */
 
