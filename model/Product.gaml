@@ -40,16 +40,22 @@ global {
 	// mouse interaction
 	product_place product_mouse;
 	geometry zone <- circle(1);
+
 	action click {
 		if (product_mouse = nil) {
 			product_mouse <- one_of(product_place overlapping (zone at_location #user_location));
 			write "Stack product place: " + product_mouse;
 		} else {
-			ask product_mouse { do move(#user_location); }
+			ask product_mouse {
+				do move(#user_location);
+			}
+
 			write "Pop product place: " + product_mouse;
 			product_mouse <- nil;
 		}
+
 	}
+
 }
 
 species product_type {
@@ -144,6 +150,7 @@ species product_place {
 }
 
 species product_util {
+
 	action shuffle {
 		ask product_instance {
 			do die;
@@ -212,10 +219,26 @@ experiment product_interact_example type: gui {
 
 	}
 
+	user_command "change strategy" {
+		ask product_util {
+			do get_player_strategy;
+			do shuffle;
+		}
+
+	}
+
 	output {
 		display my_product type: opengl {
 			species product_place;
 			species product_instance aspect: three_d;
+			species mouse_zone;
+
+			// move product place by mouse
+			event mouse_up action: click;
+			
+			// mouse zone viewer
+			species mouse_zone;
+			event mouse_move action: follow_mouse;
 		}
 
 	}
@@ -232,6 +255,7 @@ experiment product_param_example type: gui {
 			do get_param_strategy;
 			do shuffle;
 		}
+
 	}
 
 	// generate product context
@@ -250,11 +274,15 @@ experiment product_param_example type: gui {
 		display my_product type: opengl {
 			species product_place;
 			species product_instance aspect: three_d;
-			species mouse_zone;
-			
+
 			// move product place by mouse
 			event mouse_up action: click;
+			
+			// mouse zone viewer
+			species mouse_zone;
+			event mouse_move action: follow_mouse;
 		}
+
 	}
 
 }
