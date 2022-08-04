@@ -4,97 +4,192 @@
 * Author: group 2
 * Tags: 
 */
-
-
 model Product
 
-/* Insert your model definition here */
-
+/**
+ * Product shuffle strategy:
+ * 
+ * The product is categorized into 3 price type: high, medium and low. Also, the shelf has 3 level layout
+ * which are top level, eye level and lower level. Then with each shelf layout, player could choose which
+ * price type product should be placed on. After both 3 layouts are decided, program will shuffle product
+ * to shelf following rule: only products matching price type of layout be chosen and if there are multiple
+ * product sharing same price type, product will randomly pick out one for each shelf place.
+ * 
+ */
 global {
 	file product_data_file <- csv_file("../includes/product.csv", ",", string, true);
 	geometry shape <- square(50);
-	
-	// product order strategy weight
-	float product_price_weight <- rnd(0.0,1.0) min: 0.0 max: 1.0;
-	float nb_product_weight <- rnd(0.0, 1.0) min: 0.0 max: 1.0;
-	float product_link_weight <- rnd(0.0, 1.0) min: 0.0 max: 1.0;
-	float bias_weight <- rnd(0.0, 1.0) min: 0.0 max: 1.0;
-	
+
+	// product order strategy
+	map<string, string> strategy <- ["eye"::"medium", "high"::"high", "low"::"low"]; // default
+
 	// product link present
 	graph product_graph <- graph([]);
+
+	init {
+		create product_util number: 1; // singleton object
+	}
+
 }
 
 species product_type {
 	geometry shape <- circle(0.2);
 	rgb color <- #yellow;
-	
 	int id;
 	string name;
 	string price_type;
 	int price;
-	int linked_id; // deprecated
 	list<product_type> my_links;
+	int linked_id; // deprecated
+}
+
+species product_instance {
+	product_type type;
+	rgb color <- #black;
 	
-	// Eye-level > top-level > lower-level
-	float height_chance <- 0.9; //default a random chance of buying
-	
-	// Height must in list [ "high", "eye", "low" ]
-	string height;
-	
-	// Product arrangement strategy parameter
-	float prod_price_percent;
-	float nb_product_percent;
-	float product_link_percent;
-	float flip_percent <- 0.0;
-	
-	// basic params	
-	action update_order_param_part_1 {
-		prod_price_percent <- price / sum(product_type collect each.price);
-		nb_product_percent <- length(product_type where(each.name = self.name)) / length(product_type);
-	}
-	
-	// advance params
-	action update_order_param_part_2 { // should be call after all products are created
-		product_link_percent <- (prod_price_percent + sum(my_links collect each.prod_price_percent)) / (length(my_links) + 1);	
-		flip_percent <- flip_percent + product_price_weight * prod_price_percent;
-		flip_percent <- flip_percent + nb_product_weight * nb_product_percent;
-		flip_percent <- flip_percent + product_link_weight * product_link_percent;
-		flip_percent <- flip_percent + bias_weight;
-		flip_percent <- flip_percent / 4;	
-	}
-	
-	action update_height {
-		if(flip(flip_percent)) {
-			height <- "eye";
-		} else if (flip(flip_percent)) {
-			height <- "high";
+	action update_view {
+		if(type.price_type = "medium") {
+			color <- #yellow; 
+		} else if (type.price_type = "low") {			
+			color <- #green; 
 		} else {
-			height <- "low";
+			color <- #red; 
 		}
 	}
 
 	aspect default {
-		draw shape color: color;
+		do update_view;
+		draw circle(1) color: color;
+	}
+
+	aspect three_d {
+		do update_view;
+		draw sphere(1) color: color;
 	}
 }
 
 species product_link {
+
 	aspect default {
 		draw shape color: #orange;
 	}
+
 }
 
-experiment product_agent {
-	// TODO: add product link
-	init {
-		create product_type from: product_data_file {
-			location <- any_location_in(world);
-		}	
+/**
+ * Present a 2D place of product in shelf including 3 layout positions.
+ */
+species product_place {
+	product_instance high;
+	product_instance eye;
+	product_instance low;
+
+	action add_instance (product_instance p, string level) {
+		if (level = "high") {
+			high <- p;
+			high.location <- {location.x, location.y, 25.0};
+		} else if (level = "eye") {
+			eye <- p;
+			eye.location <- {location.x, location.y, 15.0};
+		} else {
+			low <- p;
+			low.location <- {location.x, location.y, 5.0};
+		}
+
+	}
+
+	action add_type (product_type t, string level) {
+		product_instance p;
+		create product_instance {
+			type <- t;
+			p <- self;
+		}
+
+		do add_instance(p, level);
 	}
 	
-	output {
-		display product_agent {
-			species product_type;
-		}
+	action move(point new_location) {
+		location <- location;	
+		do add_instance(high, "high");
+		do add_instance(eye, "eye");
+		do add_instance(low, "low");
 	}
+
+	aspect default {
+		draw circle(1) color: #black;
+	}
+
+}
+
+species product_util {
+
+	action shuffle {
+		ask product_instance { do die; }
+		ask product_place {
+			list<product_type> high_list <- product_type where (each.price_type = strategy["high"]);
+			do add_type(one_of(high_list), "high");
+			list<product_type> eye_list <- product_type where (each.price_type = strategy["eye"]);
+			do add_type(one_of(eye_list), "eye");
+			list<product_type> low_list <- product_type where (each.price_type = strategy["low"]);
+			do add_type(one_of(low_list), "low");
+		}
+
+	}
+
+	action get_player_strategy {
+		strategy <-
+		user_input_dialog("Choose the strategy", [choose("high", string, "high", ["high", "medium", "low"]), choose("eye", string, "medium", ["high", "medium", "low"]), choose("low", string, "low", ["high", "medium", "low"])]);
+	}
+
+	// link product together
+	action create_product_link {
+		loop times: length(product_type) / 2 {
+			product_type pr1 <- one_of(product_type);
+			product_type pr2 <- one_of(list(product_type) - pr1);
+			create product_link {
+				add edge(pr1, pr2, self) to: product_graph;
+				shape <- link(pr1, pr2);
+				ask pr1 {
+					if not (my_links contains pr2) {
+						my_links << pr2;
+					}
+
+				}
+
+				ask pr2 {
+					if not (my_links contains pr1) {
+						my_links << pr1;
+					}
+
+				}
+
+			}
+
+		}
+
+	}
+
+}
+
+experiment product_example type: gui {
+
+	init {
+		create product_type from: product_data_file;
+		create product_place number: 10;
+		ask product_util {
+			do create_product_link;
+			do get_player_strategy;
+			do shuffle;
+		}
+
+	}
+
+	output {
+		display my_product type: opengl {
+			species product_place;
+			species product_instance aspect: three_d;
+		}
+
+	}
+
 }

@@ -6,7 +6,9 @@
 */
 model Main
 
+import "Background.gaml"
 import "People.gaml"
+import "Product.gaml"
 
 /* Insert your model definition here */
 /*
@@ -108,7 +110,6 @@ global {
 		create counter from: counter_shapefile;
 		create doorIn from: doorIn_shapefile;
 		create doorOut from: doorOut_shapefile;
-		create product_owner number: 1;
 		create floors from: open_area_shape_file {
 			shape <- open_area;
 		}
@@ -133,54 +134,15 @@ global {
 			loop while: not empty((product_type - self) at_distance 3) {
 				location <- any_location_in(one_of(shelves));
 			}
-
+		
+		}
+		
+		ask product_util {
+			do create_product_link;
 		}
 
-		// create product link
-		loop times: nb_product / 2 {
-			product_type pr1 <- one_of(product_type);
-			product_type pr2 <- one_of(list(product_type) - pr1);
-			create product_link {
-				add edge(pr1, pr2, self) to: product_graph;
-				shape <- link(pr1, pr2);
-				ask pr1 {
-					if not (my_links contains pr2) {
-						my_links << pr2;
-					}
-
-				}
-
-				ask pr2 {
-					if not (my_links contains pr1) {
-						my_links << pr1;
-					}
-
-				}
-
-			}
-
-		}
-
-		// compute flip percentage for product arrangement strategy
-		ask product_type {
-			do update_order_param_part_1;
-		}
-
-		ask product_type {
-			do update_order_param_part_2;
-		}
-
-		// normalize flip percentage
-		list<float> flip_percent_list <- product_type collect each.flip_percent;
-		float min_flip <- min(flip_percent_list);
-		float max_flip <- max(flip_percent_list);
-		float range_flip <- max_flip - min_flip;
-
-		// update height of product
-		ask product_type {
-			flip_percent <- (flip_percent - min_flip) / range_flip;
-			do update_height;
-		}
+		// TODO: product place number should be variable
+		create product_place number: 10;
 
 		create people number: nb_people {
 			location <- any_location_in(one_of(doorIn));
@@ -264,6 +226,11 @@ global {
 				round_shopping_people <- 0;
 				round_buying_people <- 0;
 			}
+			
+			ask product_util {
+				do get_player_strategy;
+				do shuffle;
+			}
 
 			if (round > 0) {
 				loop ag over: people_mind {
@@ -323,10 +290,6 @@ global {
 			}
 
 			round <- round + 1;
-			ask product_owner {
-				do arrange_product_by_player;
-			}
-
 			end_of_round <- false;
 		} else {
 			do pause;
@@ -353,6 +316,7 @@ species people_mind {
 	people person;
 }
 
+// TODO [ SON ]: refactor code + update product interaction
 species people skills: [pedestrian, moving] parallel: true control: simple_bdi {
 	rgb color <- rnd_color(255);
 	float speed <- gauss(1, 0.1) #km / #h min: 0.1 #km / #h;
@@ -477,7 +441,7 @@ species people skills: [pedestrian, moving] parallel: true control: simple_bdi {
 			do goto target: target;
 			if (target distance_to location) <= 1 {
 				product_type current_product <- product_type first_with (target = each.location);
-				if (current_product != nil and flip(current_product.height_chance) and length(productList) > 0) {
+				if (current_product != nil and length(productList) > 0) {
 					write "get_gold add_belief(has_gold) ";
 					//					ask current_product {quantity <- quantity - 1;}	
 					// if all product is getted from this then we update belief
@@ -776,10 +740,10 @@ experiment normal_sim type: gui {
 		display map type: opengl {
 		//			species floors aspect: default;
 			species wall refresh: false;
-			species shelves aspect: default;
-			species counter aspect: default;
-			species doorIn aspect: default;
-			species doorOut aspect: default;
+			species shelves;
+			species counter;
+			species doorIn;
+			species doorOut;
 			//			species pedestrian_path aspect: free_area_aspect transparency: 0.5;
 			species pedestrian_path refresh: false;
 			species people;
