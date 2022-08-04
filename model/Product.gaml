@@ -6,6 +6,8 @@
 */
 model Product
 
+import "Background.gaml"
+
 /**
  * Product shuffle strategy:
  * 
@@ -20,6 +22,11 @@ global {
 	file product_data_file <- csv_file("../includes/product.csv", ",", string, true);
 	geometry shape <- square(50);
 
+	// product strategy by parameter	
+	string eye_level <- "medium" among: ["low", "high", "medium"];
+	string low_level <- "low" among: ["low", "high", "medium"];
+	string high_level <- "high" among: ["low", "high", "medium"];
+
 	// product order strategy
 	map<string, string> strategy <- ["eye"::"medium", "high"::"high", "low"::"low"]; // default
 
@@ -30,6 +37,19 @@ global {
 		create product_util number: 1; // singleton object
 	}
 
+	// mouse interaction
+	product_place product_mouse;
+	geometry zone <- circle(1);
+	action click {
+		if (product_mouse = nil) {
+			product_mouse <- one_of(product_place overlapping (zone at_location #user_location));
+			write "Stack product place: " + product_mouse;
+		} else {
+			ask product_mouse { do move(#user_location); }
+			write "Pop product place: " + product_mouse;
+			product_mouse <- nil;
+		}
+	}
 }
 
 species product_type {
@@ -46,15 +66,16 @@ species product_type {
 species product_instance {
 	product_type type;
 	rgb color <- #black;
-	
+
 	action update_view {
-		if(type.price_type = "medium") {
-			color <- #yellow; 
-		} else if (type.price_type = "low") {			
-			color <- #green; 
+		if (type.price_type = "medium") {
+			color <- #yellow;
+		} else if (type.price_type = "low") {
+			color <- #green;
 		} else {
-			color <- #red; 
+			color <- #red;
 		}
+
 	}
 
 	aspect default {
@@ -66,6 +87,7 @@ species product_instance {
 		do update_view;
 		draw sphere(1) color: color;
 	}
+
 }
 
 species product_link {
@@ -107,9 +129,9 @@ species product_place {
 
 		do add_instance(p, level);
 	}
-	
-	action move(point new_location) {
-		location <- location;	
+
+	action move (point new_location) {
+		location <- new_location;
 		do add_instance(high, "high");
 		do add_instance(eye, "eye");
 		do add_instance(low, "low");
@@ -122,9 +144,11 @@ species product_place {
 }
 
 species product_util {
-
 	action shuffle {
-		ask product_instance { do die; }
+		ask product_instance {
+			do die;
+		}
+
 		ask product_place {
 			list<product_type> high_list <- product_type where (each.price_type = strategy["high"]);
 			do add_type(one_of(high_list), "high");
@@ -139,6 +163,10 @@ species product_util {
 	action get_player_strategy {
 		strategy <-
 		user_input_dialog("Choose the strategy", [choose("high", string, "high", ["high", "medium", "low"]), choose("eye", string, "medium", ["high", "medium", "low"]), choose("low", string, "low", ["high", "medium", "low"])]);
+	}
+
+	action get_param_strategy {
+		strategy <- ["high"::high_level, "eye"::eye_level, "low"::low_level];
 	}
 
 	// link product together
@@ -171,7 +199,7 @@ species product_util {
 
 }
 
-experiment product_example type: gui {
+experiment product_interact_example type: gui {
 
 	init {
 		create product_type from: product_data_file;
@@ -190,6 +218,43 @@ experiment product_example type: gui {
 			species product_instance aspect: three_d;
 		}
 
+	}
+
+}
+
+experiment product_param_example type: gui {
+
+	init {
+		create product_type from: product_data_file;
+		create product_place number: 10;
+		ask product_util {
+			do create_product_link;
+			do get_param_strategy;
+			do shuffle;
+		}
+	}
+
+	// generate product context
+	parameter "high level" var: high_level;
+	parameter "eye level" var: eye_level;
+	parameter "low level" var: low_level;
+	user_command "shuffle product" {
+		ask product_util {
+			do get_param_strategy;
+			do shuffle;
+		}
+
+	}
+
+	output {
+		display my_product type: opengl {
+			species product_place;
+			species product_instance aspect: three_d;
+			species mouse_zone;
+			
+			// move product place by mouse
+			event mouse_up action: click;
+		}
 	}
 
 }

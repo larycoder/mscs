@@ -25,10 +25,12 @@ global {
 	string DOOR_IN <- "door_in" const: true;
 	string DOOR_OUT <- "door_out" const: true;
 	
-	// store owner
-	int revenue <- 0;
+	// store
+	float P_shoulder_length <- 0.45;
 	
-	float P_shoulder_length <- 0.45 parameter: true;
+	init {
+		create mouse_zone; // singleton object
+	}	
 }
 
 species pedestrian_path skills: [pedestrian_road] {
@@ -79,6 +81,14 @@ species door {
 	}
 }
 
+// special species tracking mouse point to overcome linux mouse position error
+species mouse_zone {
+	point location <- #user_location update: #user_location;
+	aspect default {
+		draw circle(1#dm) color: #red at: location;
+	}
+}
+
 experiment background {
 	init {
 		create pedestrian_path from: pedestrian_paths_file;
@@ -96,6 +106,7 @@ experiment background {
 			species wall;
 			species shelf;
 			species door;
+			species mouse_zone;
 		}
 	}
 }
