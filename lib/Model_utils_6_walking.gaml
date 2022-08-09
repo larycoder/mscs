@@ -17,12 +17,12 @@ model Modelutils6walking
 
 
 global {
-	shape_file free_spaces_shape_file <- shape_file("../includes/free spaces.shp");
-	file wall_shapefile <- file("../includes/walls.shp");
+	shape_file free_spaces_shape_file <- shape_file("../results/free spaces.shp");
+	file wall_shapefile <- file("../results/shelves.shp");
 	
 	
-	shape_file open_area_shape_file <- shape_file("../includes/open area.shp");
-	shape_file pedestrian_paths_shape_file <- shape_file("../includes/pedestrian paths.shp");
+	shape_file open_area_shape_file <- shape_file("../results/open area.shp");
+	shape_file pedestrian_paths_shape_file <- shape_file("../results/pedestrian paths.shp");
 
 	
 	graph network;
@@ -30,8 +30,8 @@ global {
 	geometry shape <- envelope(wall_shapefile);
 	
 	bool display_free_space <- false parameter: true;
-	bool display_force <- false parameter: true;
-	bool display_target <- false parameter: true;
+	bool display_force <- true parameter: true;
+	bool display_target <- true parameter: true;
 	bool display_circle_min_dist <- true parameter: true;
 	
 	float P_shoulder_length <- 0.45 parameter: true;

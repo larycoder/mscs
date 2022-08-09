@@ -19,21 +19,21 @@ model Modelutils3friendship
 */
 
 global {
-	file shape_file_in <- file('../includes/road.shp') ;
+//	file shape_file_in <- file('../includes/road.shp') ;
 	file shape_file_bounds <- file('../includes/bounds.shp') ;
 	geometry shape <- envelope(shape_file_bounds);
 	
 	//spatial graph representing the road network
-	graph road_graph; 
+//	graph road_graph; 
 	
 	//social graph (not spatial) representing the friendship links between people
 	graph friendship_graph <- graph([]);
 	
 	init {
-		create road from: shape_file_in;
+//		create road from: shape_file_in;
 		
 		//creation of th road graph from the road agents
-		road_graph <- as_edge_graph(road);
+//		road_graph <- as_edge_graph(road);
 		
 		//creation of 50 people agent, and add each people agent as a node in the friendship graph
 		create people number: 50 {
@@ -53,7 +53,7 @@ global {
 }
 
 species people skills: [moving]{
-	point location <- any_location_in(one_of(road));
+	point location <- any_location_in(world);
 	people target_people <- one_of(people);
 	point target <- target_people.location;
 	float size <- 3.0;
@@ -67,14 +67,14 @@ species people skills: [moving]{
 	}
 	
 	//the agent moves toward its target, when reaching it, it chooses another target as the location of one of the people agent
-	reflex movement {
-		if (location distance_to target < 5.0) {
-			target_people <- one_of(people);
-			target <- target_people.location;
-			do updateSize;
-		}
-		do goto on:road_graph target:target speed:1 + rnd(2.0);
-	}
+//	reflex movement {
+//		if (location distance_to target < 5.0) {
+//			target_people <- one_of(people);
+//			target <- target_people.location;
+//			do updateSize;
+//		}
+//		do goto on:world target:target speed:1 + rnd(2.0);
+//	}
 	aspect default {
 		draw circle(size) color: #red;
 	}	
@@ -87,17 +87,17 @@ species friendship_link {
 	}
 }
 	
-species road  {
-	aspect default {
-		draw shape color:#black ;
-	}
-} 
+//species road  {
+//	aspect default {
+//		draw shape color:#black ;
+//	}
+//} 
 
 
 experiment multigraph type: gui {
 	output {
 		display friendship type: opengl{
-			species road ;
+//			species road ;
 			species friendship_link ;
 			species people;
 		}
