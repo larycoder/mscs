@@ -19,18 +19,38 @@ import "Product.gaml"
  * 		
  */
 global {
-	file product_data_file <- csv_file("../includes/product.csv", ",", string, true);
+//	Background
+	
 	shape_file open_area_shape_file <- shape_file("../results/open area.shp");
 	shape_file wall_shapefile <- shape_file("../results/walls.shp");
-	shape_file pedestrian_paths_shape_file <- shape_file("../results/pedestrian paths.shp");
 	shape_file shelves_shapefile <- shape_file("../results/shelves.shp");
 	shape_file free_spaces_shape_file <- shape_file("../results/free spaces.shp");
-	graph network;
+	shape_file pedestrian_paths_shape_file <- shape_file("../results/pedestrian paths.shp");
+	file counter_shapefile <- file("../results/counter.shp");
+	file doorIn_shapefile <- file("../results/doorin.shp");
+	file doorOut_shapefile <- file("../results/doorout.shp");
+	file floor_shapefile <- file("../results/floor.shp");
+	
 	geometry shape <- envelope(wall_shapefile);
-	bool display_free_space <- false parameter: true;
+	geometry open_area;
+	geometry free_space <- envelope(free_spaces_shape_file);
+	geometry shape_counter <- envelope(counter_shapefile);
+	geometry shape_doorIn <- envelope(doorIn_shapefile);
+	geometry shape_doorOut <- envelope(doorOut_shapefile);
+	geometry shape_floor <- envelope(floor_shapefile);
+	geometry shape_wall <- envelope(wall_shapefile);
+	
+	
+//	People
+	
+	graph network;
+	
+	//	bool display_free_space <- false parameter: true;
 	bool display_force <- false parameter: true;
 	bool display_target <- false parameter: true;
+	
 	bool display_circle_min_dist <- true parameter: true;
+	
 	float P_shoulder_length <- 0.45 parameter: true;
 	float P_proba_detour <- 0.5 parameter: true;
 	bool P_avoid_other <- true parameter: true;
@@ -53,26 +73,19 @@ global {
 	float P_gama_SFM_simple parameter: true <- 0.35 category: "SFM simple";
 	float P_relaxion_SFM_simple parameter: true <- 0.54 category: "SFM simple";
 	float P_A_pedestrian_SFM_simple parameter: true <- 4.5 category: "SFM simple";
-
-	//	float step <- 0.1;
+	
 	int nb_people <- 20;
+	
+//	Product
+	file product_data_file <- csv_file("../includes/product.csv", ",", string, true);
+	
+	//	float step <- 0.1;
 	int nb_product <- 15;
-	geometry open_area;
-	geometry free_space <- envelope(free_spaces_shape_file);
-
+	
 	//social graph (not spatial) representing the friendship links between people
 	graph friendship_graph <- graph([]);
 	graph product_graph <- graph([]);
-	file counter_shapefile <- file("../results/counter.shp");
-	file doorIn_shapefile <- file("../results/doorin.shp");
-	file doorOut_shapefile <- file("../results/doorout.shp");
-	file floor_shapefile <- file("../results/floor.shp");
-	geometry shape_counter <- envelope(counter_shapefile);
-	geometry shape_doorIn <- envelope(doorIn_shapefile);
-	geometry shape_doorOut <- envelope(doorOut_shapefile);
-	geometry shape_floor <- envelope(floor_shapefile);
-	geometry shape_wall <- envelope(wall_shapefile);
-
+	
 	//Time definition
 	float step <- 1 #second;
 	int daily <- 1200; //cycles / day
@@ -80,12 +93,15 @@ global {
 	int shopperCounts;
 	float first_customers_rate <- 0.25; // 10% of population
 	float patienceTime_global <- daily #cycle; // 5.0 #minute ; 
+	
 	string prod_at_location <- "prod_at_location";
 	string reject_prod_location <- "reject_prod_location";
+	
 	predicate travel_to_shop <- new_predicate("want to shopping ");
 	predicate shopping <- new_predicate(" have target product ");
 	predicate saw_product <- new_predicate(prod_at_location);
 	predicate choose_product <- new_predicate("choose a product");
+	
 	//	predicate reject_prod_location <- new_predicate("rejected product");
 	predicate found_product <- new_predicate("found one target product");
 	predicate found_all_product <- new_predicate("found all target product");
@@ -107,13 +123,14 @@ global {
 	float avg_happiness <- 0.0 update: mean(people collect (each.happiness));
 
 	init {
+		
+		//	Background
 		create counter from: counter_shapefile;
 		create doorIn from: doorIn_shapefile;
 		create doorOut from: doorOut_shapefile;
 		create floors from: open_area_shape_file {
 			shape <- open_area;
 		}
-
 		create wall from: wall_shapefile;
 		open_area <- first(open_area_shape_file.contents);
 		create shelves from: shelves_shapefile;
@@ -121,12 +138,12 @@ global {
 			list<geometry> fs <- free_spaces_shape_file overlapping self;
 			free_space <- fs first_with (each covers shape);
 		}
-
 		network <- as_edge_graph(pedestrian_path);
 		ask pedestrian_path parallel: true {
 			do build_intersection_areas pedestrian_graph: network;
 		}
-
+		
+		//	Product
 		create product_type from: product_data_file {
 			location <- any_location_in(one_of(shelves));
 
@@ -140,10 +157,10 @@ global {
 		ask product_util {
 			do create_product_link;
 		}
-
 		// TODO: product place number should be variable
 		create product_place number: 10;
 
+//	People
 		create people number: nb_people {
 			location <- any_location_in(one_of(doorIn));
 			patienceTime <- myself.patienceTime_global;
@@ -176,14 +193,12 @@ global {
 			}
 
 		}
-
 		loop ag over: people {
 			create people_mind number: nb_people {
 				self.person <- ag;
 			}
 
 		}
-
 		// Init random need shopping people with first_customers_rate
 		int need_shopping <- int(abs(first_customers_rate * nb_people));
 		loop times: need_shopping {
@@ -192,7 +207,6 @@ global {
 			p1.opinion <- 0.8; // init first opinion
 
 		}
-
 		// Create random friendship graph
 		loop times: abs(nb_people * 1.5) {
 			people p1 <- one_of(people);
