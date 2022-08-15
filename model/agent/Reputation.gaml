@@ -10,8 +10,8 @@ model Reputation
 
 /* Insert your model definition here */
 
-import "../Model_.gaml"
-
+import "../Main.gaml"
+import "People.gaml"
 
 
 

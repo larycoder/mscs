@@ -7,7 +7,7 @@
 model Product
 
 import "Background.gaml"
-
+import "../Main.gaml"
 /**
  * Product shuffle strategy:
  * 

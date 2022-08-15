@@ -10,7 +10,7 @@ model People
 
 /* Insert your model definition here */
 
-import "../Model_.gaml"
+import "../Main.gaml"
 
 global{
 	///////////PEDESTRIAN/////////////////
