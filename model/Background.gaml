@@ -22,7 +22,7 @@ global {
 	string DOOR_OUT <- "door_out" const: true;
 
 	// store
-	float P_shoulder_length <- 0.45;
+	float P_shoulder_length <- 0.45;	
 
 	// if want to have red dot at mouse point, add this to mouse_move event
 	action follow_mouse {
@@ -93,15 +93,24 @@ species door {
 
 }
 
+grid floor_cell width: shape.width height: shape.height neighbors: 8 {
+
+	aspect default {
+		draw shape wireframe: true border: #black;
+	}
+
+}
+
 // special species tracking mouse point to overcome linux mouse position error
 species mouse_zone {
+
 	aspect default {
 		draw circle(1 #dm) color: #red;
 	}
 
 }
 
-experiment background {
+experiment example_gui_background type: gui {
 
 	init {
 		create pedestrian_path from: pedestrian_paths_file;
@@ -125,6 +134,7 @@ experiment background {
 			species wall;
 			species shelf;
 			species door;
+			species floor_cell;
 			species mouse_zone;
 		}
 
