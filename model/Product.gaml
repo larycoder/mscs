@@ -47,7 +47,7 @@ global {
 			write "Stack product place: " + product_mouse;
 		} else {
 			ask product_mouse {
-				do move(#user_location);
+				do move(one_of(floor_cell where(not empty(mouse_zone inside each))).location);
 			}
 
 			write "Pop product place: " + product_mouse;
