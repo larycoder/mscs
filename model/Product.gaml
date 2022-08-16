@@ -108,6 +108,7 @@ species product_link {
  * Present a 2D place of product in shelf including 3 layout positions.
  */
 species product_place {
+	floor_cell cell;
 	product_instance high;
 	product_instance eye;
 	product_instance low;
