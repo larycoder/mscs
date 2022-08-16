@@ -14,6 +14,7 @@ global {
 	geometry shape <- envelope(open_area_file);
 
 	init {
+		create mouse_zone;
 		create pedestrian_path from: pedestrian_paths_file;
 		create floors from: open_area_file;
 		create shelf from: shelves_shape_file;
@@ -22,7 +23,7 @@ global {
 			door_type <- DOOR_IN;
 		}
 
-		create door from: door_in_shape_file {
+		create door from: door_out_shape_file {
 			door_type <- DOOR_OUT;
 		}
 
@@ -44,9 +45,9 @@ experiment arrange_and_store_product_position_in_csv {
 	parameter "low level" var: low_level;
 	user_command "add product place" {
 		create product_place {
-			floor_cell my_cell <- one_of(floor_cell);
-			shape <- my_cell.shape;
-			location <- my_cell.location;
+			cell <- one_of(floor_cell where(empty(product_place inside each)));
+			shape <- cell.shape;
+			location <- cell.location;
 		}
 
 	}
@@ -60,7 +61,7 @@ experiment arrange_and_store_product_position_in_csv {
 	}
 
 	output {
-		display my_store {
+		display my_store type: opengl {
 			species floors;
 			species pedestrian_path;
 			species wall;
@@ -70,8 +71,13 @@ experiment arrange_and_store_product_position_in_csv {
 			species product_place {
 				draw shape color: #black;
 			}
+			
+			// move product place by mouse
+			event mouse_up action: click;
 
+			// mouse zone viewer
 			species mouse_zone;
+			event mouse_move action: follow_mouse;
 		}
 
 	}
