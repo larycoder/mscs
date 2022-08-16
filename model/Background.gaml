@@ -110,7 +110,7 @@ species mouse_zone {
 
 }
 
-experiment example_gui_background type: gui {
+experiment gui_background_example type: gui {
 
 	init {
 		create pedestrian_path from: pedestrian_paths_file;
