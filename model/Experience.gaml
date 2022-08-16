@@ -13,6 +13,9 @@ import "Product.gaml"
 global {
 	geometry shape <- envelope(open_area_file);
 
+	// csv file for saving product_place position
+	string product_place_csv <- "../results/product_place.csv";
+
 	init {
 		create mouse_zone;
 		create pedestrian_path from: pedestrian_paths_file;
@@ -45,7 +48,7 @@ experiment arrange_and_store_product_position_in_csv {
 	parameter "low level" var: low_level;
 	user_command "add product place" {
 		create product_place {
-			cell <- one_of(floor_cell where(empty(product_place inside each)));
+			cell <- one_of(floor_cell where (empty(product_place inside each)));
 			shape <- cell.shape;
 			location <- cell.location;
 		}
@@ -60,6 +63,15 @@ experiment arrange_and_store_product_position_in_csv {
 
 	}
 
+	user_command "save product place position to csv" {
+		bool ret <- delete_file(product_place_csv); // pre-clean for saving new data
+		ask product_place {
+			save [name, location] to: product_place_csv type: csv rewrite: false;
+		}
+
+		write "Save product place position to file: " + product_place_csv;
+	}
+
 	output {
 		display my_store type: opengl {
 			species floors;
@@ -71,7 +83,7 @@ experiment arrange_and_store_product_position_in_csv {
 			species product_place {
 				draw shape color: #black;
 			}
-			
+
 			// move product place by mouse
 			event mouse_up action: click;
 
