@@ -67,6 +67,7 @@ species product_type {
 	int price;
 	list<product_type> my_links;
 	int linked_id; // deprecated
+	float height_chance <- 0.5;
 }
 
 species product_instance {

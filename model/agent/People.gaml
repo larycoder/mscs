@@ -82,7 +82,7 @@ species people skills: [pedestrian, moving] parallel: true{
 	list<string> boughtList <- [];
 	list<string> foundList <- [];
 	int found_number <-0;
-	
+	float foundTime;
 //	string current_status;
 	float view_dist<-5.0; //dist seeing the product
 	float pick_dist<-1.0; //dist to pick the product
@@ -241,6 +241,75 @@ species people skills: [pedestrian, moving] parallel: true{
 		
 	}
 
+	
+	// New
+	action choose_best_product {
+		
+		list<point> possible_product <- get_beliefs_with_name(prod_at_location) collect (point(get_predicate(mental_state (each)).values["location_value"]));
+		list<point> reject_prod <- get_beliefs_with_name(reject_prod_location) collect (point(get_predicate(mental_state (each)).values["location_value"]));
+		
+		possible_product <- possible_product - reject_prod;
+		
+		if (empty(possible_product) or (length(productList)=0 and length(foundList)>0)) {
+			write "empty product";
+			do remove_intention(found_product, true); 
+			write "choose_best_product remove_intention(found_product) ";
+		} else {
+			target <- (possible_product with_min_of (each distance_to self)).location;
+		}
+//		do remove_intention(choose_product, true); 
+		
+	}
+	// New
+	action get_product {
+		//find all products in list
+		// if found all change do add_belief(found_product);
+		movement <- "wander";
+		do moveAround;
+		// do check neightbor product;
+		// do probability to buy 
+		
+		
+		if (target = nil) {
+			do choose_best_product;
+			
+		} 
+		else {
+			do goto target: target ;
+			if (target distance_to location) <=1  {
+				product_type current_product<- product_type first_with (target = each.location);
+				
+				if (current_product != nil and flip(current_product.height_chance) and length(productList)>0) {
+					
+				 	write "get_gold add_belief(has_gold) ";
+//					ask current_product {quantity <- quantity - 1;}	
+
+					// TODO Hiep Option: add product to list
+					productList <- [];
+					foundList <- ["pen"];
+					boughtList <- ["pen"];
+					found_number <- found_number +1 ; 
+					// if all product is getted from this then we update belief
+					if (length(productList)=0 and length(foundList)>0){
+						
+//						do add_belief(found_all_product);
+						foundTime <- time;
+//						do remove_belief(found_product);
+//						do remove_belief(shopping);
+
+						write "update when found all product";
+					}else{
+//						do add_belief(found_product);
+					}	
+				}
+				else{
+//					do add_belief(new_predicate(reject_prod_location, ["location_value"::target]));
+					write "get_product new_predicate(reject_prod_location) ";
+				}
+
+				target <- nil;
+			}}
+	}
 //	reflex move when: need_product {
 	action moveAround {
 		
