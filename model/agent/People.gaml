@@ -168,7 +168,7 @@ species people skills: [pedestrian, moving] parallel: true{
 	 * to a fixed distance or inside a specific geometry.
 	 */
 	
-	reflex comeback when: every(daily#cycle){
+	action calculation_comeback { //when: every(daily#cycle){
 //		write "run comeback " +opinion;
 
 		comeback_rate <- (int(need_product) + opinion + happiness)/3;
@@ -184,12 +184,29 @@ species people skills: [pedestrian, moving] parallel: true{
 		}
 	}
 	
-	reflex search_time {
+	// New
+	action calculation_happiness {
+		
+	}
+	// New
+	action calculation_opinion {
+		
+	}
+	//New
+	action update_end_state {
+		
+	}
+	// New 
+	reflex monitor_statistic {
+		
+	}
+	// New
+	reflex monitor_search_time {
 		
 	}
 	
-	
-	reflex current_state {
+	// New
+	reflex monitor_current_state {
 		if shopper {
 			
 //			if cycle >= 200 and cycle <400 {
@@ -245,21 +262,29 @@ species people skills: [pedestrian, moving] parallel: true{
 	// New
 	action choose_best_product {
 		
-		list<point> possible_product <- get_beliefs_with_name(prod_at_location) collect (point(get_predicate(mental_state (each)).values["location_value"]));
-		list<point> reject_prod <- get_beliefs_with_name(reject_prod_location) collect (point(get_predicate(mental_state (each)).values["location_value"]));
-		
-		possible_product <- possible_product - reject_prod;
-		
-		if (empty(possible_product) or (length(productList)=0 and length(foundList)>0)) {
-			write "empty product";
-			do remove_intention(found_product, true); 
-			write "choose_best_product remove_intention(found_product) ";
-		} else {
-			target <- (possible_product with_min_of (each distance_to self)).location;
-		}
+//		list<point> possible_product <- get_beliefs_with_name(prod_at_location) collect (point(get_predicate(mental_state (each)).values["location_value"]));
+//		list<point> reject_prod <- get_beliefs_with_name(reject_prod_location) collect (point(get_predicate(mental_state (each)).values["location_value"]));
+//		
+//		possible_product <- possible_product - reject_prod;
+//		
+//		if (empty(possible_product) or (length(productList)=0 and length(foundList)>0)) {
+//			write "empty product";
+//			do remove_intention(found_product, true); 
+//			write "choose_best_product remove_intention(found_product) ";
+//		} else {
+//			target <- (possible_product with_min_of (each distance_to self)).location;
+//		}
 //		do remove_intention(choose_product, true); 
+
+		
 		
 	}
+	
+	// New
+	action buying_decision {
+		
+	}
+	
 	// New
 	action get_product {
 		//find all products in list
@@ -267,50 +292,56 @@ species people skills: [pedestrian, moving] parallel: true{
 		movement <- "wander";
 		do moveAround;
 		// do check neightbor product;
+		do choose_best_product;
 		// do probability to buy 
+		do buying_decision;
 		
+		// paying (optional)
 		
-		if (target = nil) {
-			do choose_best_product;
-			
-		} 
-		else {
-			do goto target: target ;
-			if (target distance_to location) <=1  {
-				product_type current_product<- product_type first_with (target = each.location);
-				
-				if (current_product != nil and flip(current_product.height_chance) and length(productList)>0) {
-					
-				 	write "get_gold add_belief(has_gold) ";
-//					ask current_product {quantity <- quantity - 1;}	
-
-					// TODO Hiep Option: add product to list
-					productList <- [];
-					foundList <- ["pen"];
-					boughtList <- ["pen"];
-					found_number <- found_number +1 ; 
-					// if all product is getted from this then we update belief
-					if (length(productList)=0 and length(foundList)>0){
-						
-//						do add_belief(found_all_product);
-						foundTime <- time;
-//						do remove_belief(found_product);
-//						do remove_belief(shopping);
-
-						write "update when found all product";
-					}else{
-//						do add_belief(found_product);
-					}	
-				}
-				else{
-//					do add_belief(new_predicate(reject_prod_location, ["location_value"::target]));
-					write "get_product new_predicate(reject_prod_location) ";
-				}
-
-				target <- nil;
-			}}
+//		if (target = nil) {
+//			do choose_best_product;
+//			
+//		} 
+//		else {
+//			do goto target: target ;
+//			if (target distance_to location) <=1  {
+//				product_type current_product<- product_type first_with (target = each.location);
+//				
+//				if (current_product != nil and flip(current_product.height_chance) and length(productList)>0) {
+//					
+//				 	write "get_gold add_belief(has_gold) ";
+////					ask current_product {quantity <- quantity - 1;}	
+//
+//					// TODO Hiep Option: add product to list
+//					productList <- [];
+//					foundList <- ["pen"];
+//					boughtList <- ["pen"];
+//					found_number <- found_number +1 ; 
+//					// if all product is getted from this then we update belief
+//					if (length(productList)=0 and length(foundList)>0){
+//						
+////						do add_belief(found_all_product);
+//						foundTime <- time;
+////						do remove_belief(found_product);
+////						do remove_belief(shopping);
+//
+//						write "update when found all product";
+//					}else{
+////						do add_belief(found_product);
+//					}	
+//				}
+//				else{
+////					do add_belief(new_predicate(reject_prod_location, ["location_value"::target]));
+//					write "get_product new_predicate(reject_prod_location) ";
+//				}
+//
+//				target <- nil;
+//			}}
 	}
-//	reflex move when: need_product {
+
+
+
+
 	action moveAround {
 		
 //		if (walkinTime !=nil and time > walkinTime +patienceTime){
