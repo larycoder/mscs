@@ -144,10 +144,25 @@ species product_place {
 		do add_instance(eye, "eye");
 		do add_instance(low, "low");
 	}
+	
+	int color_code <- 0;
+	init {
 
-	aspect default {
-		draw circle(1) color: #black;
+		color <- color_code;
 	}
+	
+	aspect default {
+		if color_code = 0 {
+			draw circle(1) color: #black ;
+		} else if color_code = 1 {
+			draw circle(1) color: #red ;
+		}
+		
+	}
+	
+//	aspect default {
+//		draw circle(1) color: #black;
+//	}
 
 }
 

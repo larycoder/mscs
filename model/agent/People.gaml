@@ -60,7 +60,7 @@ species people skills: [pedestrian, moving] parallel: true{
 	
 	
 	
-	
+	floor_cell cell;
 	
 	rgb color <- rnd_color(255);
 	float speed <- gauss(1,0.1) #km/#h min: 0.1 #km/#h;
@@ -86,8 +86,8 @@ species people skills: [pedestrian, moving] parallel: true{
 	int found_number <-0;
 	float foundTime;
 //	string current_status;
-	float view_dist<-5.0; //dist seeing the product
-	float pick_dist<-1.0; //dist to pick the product
+//	float view_dist<-5.0; //dist seeing the product
+//	float pick_dist<-1.0; //dist to pick the product
 	
 	list<people> friends;
 	float converge <- rnd(0.0,1.0);
@@ -278,17 +278,20 @@ species people skills: [pedestrian, moving] parallel: true{
 //		}
 //		do remove_intention(choose_product, true); 
 
-		ask floor_cell at_distance(5.0) {
-	        if(self overlaps myself) {
-	            self.color <- #green;
-	        }
-	        
-	        if(self overlaps myself) {
-	            self.color <- #green;
-	        }
-	        
-        }
-		
+		if cell != nil{
+    		if   (not empty (cell.neighbors)) {
+    			
+			list<product_place> chosen_one ;
+			ask floor_cell at_distance (product_scanning_range){
+				chosen_one <- product_place where ( each.cell overlaps self );	//This do the trick
+				write " scanning  " + length(chosen_one);
+				loop i over: chosen_one {
+					i.color_code <-2;
+					// add product to list here
+				}
+			}
+		}
+    	}
 	}
 	
 	// New
@@ -399,7 +402,7 @@ species people skills: [pedestrian, moving] parallel: true{
 			draw circle(minimal_distance).contour color: color;
 		}
 		
-		draw circle(view_dist) color: color border: #black wireframe: true;
+		draw circle(product_scanning_range) color: color border: #black wireframe: true;
 		
 		draw triangle(shoulder_length) color: color rotate: heading + 90.0;
 		

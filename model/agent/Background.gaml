@@ -95,8 +95,23 @@ species door {
 
 grid floor_cell width: shape.width height: shape.height neighbors: 8 {
 	
+	int color_value <- 0;
+	init{
+		color <- #black;
+	}
+	reflex update_color {
+    if (color_value = 0) {
+        color <- #green;
+    } else if (color_value = 1) {
+        color <- #yellow;
+    } else if (color_value = 2) {
+        color <- #red;
+    }
+    color_value <- 0;
+    }
+    
 	aspect default {
-		draw shape wireframe: true border: #black;
+		draw shape wireframe: true border: color;
 	}
 
 }

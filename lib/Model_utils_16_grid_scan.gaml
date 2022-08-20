@@ -89,7 +89,7 @@ species my_species skills:[moving] parent:spec_view {
     			
 			list<second_spec> chosen_one ;
 			ask my_grid at_distance (5.0){
-				chosen_one <- second_spec where ( each.my_plot overlaps self );
+				chosen_one <- second_spec where ( each.my_plot overlaps self );	//This do the trick
 				write " scanning  " + length(chosen_one);
 				loop i over: chosen_one {
 					i.color_code <-1;
