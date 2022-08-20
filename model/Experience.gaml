@@ -6,8 +6,9 @@
 */
 model Experience
 
-import "Background.gaml"
-import "Product.gaml"
+import "agent/Background.gaml"
+import "agent/Product.gaml"
+//import "Main.gaml"
 
 /* Insert your model definition here */
 global {

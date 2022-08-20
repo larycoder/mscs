@@ -8,13 +8,13 @@ model Background
 
 /* Insert your model definition here */
 global {
-	shape_file pedestrian_paths_file <- shape_file("../results/pedestrian paths.shp");
-	shape_file open_area_file <- shape_file("../results/open area.shp");
-	shape_file free_spaces_shape_file <- shape_file("../results/free spaces.shp");
-	shape_file shelves_shape_file <- shape_file("../results/shelves.shp");
-	shape_file wall_shape_file <- shape_file("../results/walls.shp");
-	shape_file door_in_shape_file <- shape_file("../results/doorin.shp");
-	shape_file door_out_shape_file <- shape_file("../results/doorout.shp");
+	shape_file pedestrian_paths_file <- shape_file("../../results/pedestrian paths.shp");
+	shape_file open_area_file <- shape_file("../../results/open area.shp");
+	shape_file free_spaces_shape_file <- shape_file("../../results/free spaces.shp");
+	shape_file shelves_shape_file <- shape_file("../../results/shelves.shp");
+	shape_file wall_shape_file <- shape_file("../../results/walls.shp");
+	shape_file door_in_shape_file <- shape_file("../../results/doorin.shp");
+	shape_file door_out_shape_file <- shape_file("../../results/doorout.shp");
 	geometry shape <- envelope(open_area_file);
 
 	// const
@@ -75,7 +75,7 @@ species wall {
 	float high <- rnd(10.0, 20.0);
 
 	aspect demo {
-		draw shape border: #black depth: high texture: ["../includes/top.png", "../includes/texture5.jpg"];
+		draw shape border: #black depth: high texture: ["../../includes/top.png", "../../includes/texture5.jpg"];
 	}
 
 	aspect default {
@@ -94,7 +94,7 @@ species door {
 }
 
 grid floor_cell width: shape.width height: shape.height neighbors: 8 {
-
+	
 	aspect default {
 		draw shape wireframe: true border: #black;
 	}

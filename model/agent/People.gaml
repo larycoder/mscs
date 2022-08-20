@@ -8,6 +8,8 @@
 
 model People
 
+import "People.gaml"
+
 /* Insert your model definition here */
 
 import "../Main.gaml"
@@ -276,7 +278,16 @@ species people skills: [pedestrian, moving] parallel: true{
 //		}
 //		do remove_intention(choose_product, true); 
 
-		
+		ask floor_cell at_distance(5.0) {
+	        if(self overlaps myself) {
+	            self.color <- #green;
+	        }
+	        
+	        if(self overlaps myself) {
+	            self.color <- #green;
+	        }
+	        
+        }
 		
 	}
 	

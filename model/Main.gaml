@@ -24,11 +24,11 @@ import "agent/Product.gaml"
 
 
 global {
-	shape_file free_spaces_shape_file <- shape_file("results/free spaces.shp");
-	file shelves_shapefile <- file("results/shelves.shp");
-	file wall_shapefile <- file("results/walls.shp");
-	shape_file open_area_shape_file <- shape_file("results/open area.shp");
-	shape_file pedestrian_paths_shape_file <- shape_file("results/pedestrian paths.shp");
+	shape_file free_spaces_shape_file <- shape_file("../results/free spaces.shp");
+	file shelves_shapefile <- file("../results/shelves.shp");
+	file wall_shapefile <- file("../results/walls.shp");
+	shape_file open_area_shape_file <- shape_file("../results/open area.shp");
+	shape_file pedestrian_paths_shape_file <- shape_file("../results/pedestrian paths.shp");
 	graph network;
 	geometry shape <- envelope(wall_shapefile);
 
@@ -48,10 +48,10 @@ global {
 	graph friendship_graph <- graph([]);
 	graph product_graph <- graph([]);
 	
-	file counter_shapefile <- file("results/counter.shp");
-	file doorIn_shapefile <- file("results/doorin.shp");
-	file doorOut_shapefile <- file("results/doorout.shp");
-	file floor_shapefile <- file("results/floor.shp");
+	file counter_shapefile <- file("../results/counter.shp");
+	file doorIn_shapefile <- file("../results/doorin.shp");
+	file doorOut_shapefile <- file("../results/doorout.shp");
+	file floor_shapefile <- file("../results/floor.shp");
 	
 	
 	geometry shape_counter <- envelope(counter_shapefile);
@@ -349,7 +349,7 @@ experiment normal_sim type: gui {
 			species doorIn aspect: default;
 			species doorOut aspect: default;
 			
-			species pedestrian_path aspect:free_area_aspect transparency: 0.5 ;
+//			species pedestrian_path aspect:free_area_aspect transparency: 0.5 ;
 			species pedestrian_path refresh: false;
 			species people;
 			species product_type;
