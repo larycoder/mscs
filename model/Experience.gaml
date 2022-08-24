@@ -8,7 +8,6 @@ model Experience
 
 import "agent/Background.gaml"
 import "agent/Product.gaml"
-//import "Main.gaml"
 
 /* Insert your model definition here */
 global {
@@ -110,6 +109,14 @@ experiment background_with_product_place_example {
 		}
 
 	}
+	
+	user_command "shuffle product to places" {
+		ask product_util {
+			do get_player_strategy;
+			do shuffle;
+		}
+
+	}
 
 	output {
 		display my_store_with_product_place type: opengl {
@@ -122,6 +129,7 @@ experiment background_with_product_place_example {
 			species product_place {
 				draw shape color: #black;
 			}
+			species product_instance aspect: three_d;
 
 			// move product place by mouse
 			event mouse_up action: click;
