@@ -29,11 +29,12 @@ global {
 	geometry shape_wall <- envelope(wall_shapefile);
 	
 	graph network;
+	//World shape
 	geometry shape <- envelope(wall_shapefile);
 	
 	// const
-	string DOOR_IN <- "door_in" const: true;
-	string DOOR_OUT <- "door_out" const: true;
+//	string DOOR_IN <- "door_in" const: true;
+//	string DOOR_OUT <- "door_out" const: true;
 
 	// store
 	float P_shoulder_length <- 0.45;	

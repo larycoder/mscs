@@ -47,7 +47,8 @@ global {
 //	
 //	graph network;
 //	
-//	geometry shape <- envelope(wall_shapefile);
+	//World shape
+	geometry shape <- envelope(wall_shapefile);
 	
 	//	float step <- 0.1;
 	int remaining_time min: 0;
@@ -55,7 +56,7 @@ global {
 	int current_cycle <- 0 ;
 	
 	
-	int nb_people <- 10;
+//	int nb_people <- 10;
 	int nb_product <- 15;
 	
 	//social graph (not spatial) representing the friendship links between people
@@ -66,13 +67,15 @@ global {
 	float step <- 1 #second; 
  	int daily <- 600 ; //cycles / day
  	int numberOfDays <- 0; 
+ 	int prevDay <- -1;
  	int shopperCounts;
  	
- 	float first_customers_rate <- 0.1 ; // 10% of population
+ 	
 	
 	float patienceTime_global <- 600 #cycle;// 5.0 #minute ; 
 
-	
+	bool newDay <- true;
+//	bool endDay <- false;
 
 	
 	init {
@@ -105,73 +108,70 @@ global {
 			
 //			write "patienceTime " + myself.patienceTime + " " + patienceTime ;
 			
-		}
+		}	
 		
-		// Init random need shopping people with first_customers_rate
-		int need_shopping <- int(abs(first_customers_rate*nb_people));
-		loop times: need_shopping {
-			people p1 <- one_of(people where(each.need_product != true));
-			
-			p1.need_product <- true;
-			p1.opinion <- 0.8; // init first opinion
-			
-		}
+//		// Init random need shopping people with first_customers_rate
+//		int need_shopping <- int(abs(first_customers_rate*nb_people));
+//		loop times: need_shopping {
+//			people p1 <- one_of(people where(each.need_product != true));
+//			
+//			p1.need_product <- true;
+//			p1.opinion <- 0.8; // init first opinion
+//			
+//		}
+		do create_population;
 		
-		// Create random friendship graph
-		loop times: abs(nb_people*1.5) {
-
-			people p1 <- one_of(people);
-			people p2 <- one_of(list(people) - p1);
-			
-			create friendship_link  {
-				add edge (p1, p2, self) to: friendship_graph;
-				shape <- link(p1.friend_map,p2.friend_map);
-			}
-		}
+//		// Create random friendship graph
+//		loop times: abs(nb_people*1.5) {
+//
+//			people p1 <- one_of(people);
+//			people p2 <- one_of(list(people) - p1);
+//			
+//			create friendship_link  {
+//				add edge (p1, p2, self) to: friendship_graph;
+//				shape <- link(p1.friend_map,p2.friend_map);
+//			}
+//		}
+		do create_friendship;
+		
+//		create product_type number:nb_product{
+//			// TODO Hiep: load from csv file
+//			// TODO Hiep: heigh formula
+//			name <- "pen";
+//			price <- 100;
+//			location <- any_location_in(one_of(shelves) );
+////			linked_id <- 21;
+//		}
+//		
+//		// create product link
+//		loop times: nb_product/2 {
+//			product_type pr1 <- one_of(product_type);
+//			product_type pr2 <- one_of(list(product_type) - pr1);
+//			
+//			create product_link  {
+//				add edge (pr1, pr2, self) to: product_graph;
+//				shape <- link(pr1,pr2);
+//			}
+//		}
 		
 		
-		create product_type number:nb_product{
-			// TODO Hiep: load from csv file
-			// TODO Hiep: heigh formula
-			name <- "pen";
-			price <- 100;
-			location <- any_location_in(one_of(shelves) );
-//			linked_id <- 21;
-		}
-		// create product link
-		loop times: nb_product/2 {
-			product_type pr1 <- one_of(product_type);
-			product_type pr2 <- one_of(list(product_type) - pr1);
-			
-			create product_link  {
-				add edge (pr1, pr2, self) to: product_graph;
-				shape <- link(pr1,pr2);
-			}
-		}
+		
 	}
 	
 	// TODO: more specific pause condition
-	reflex stop when: every(daily#cycle){ // empty(people) or (shopperCounts =0)  {
-		
-		if (numberOfDays+1 >1){
-		ask people{
-//			write "Try re init";
-			do re_init;
-		} 
-		}
-		do pause;
+//	reflex stop when: every(daily#cycle){ // empty(people) or (shopperCounts =0)  {
+//		
+//		if (numberOfDays+1 >1){
+//		ask people{
+////			write "Try re init";
+//			do re_init;
+//		} 
+//		}
+//		do pause;
+//
+//	}
+	
 
-	}
-	
-	// program clock
-	reflex current_time when: every(daily#cycle) {
-//		write "Now is " + time/6; 
-		// Re-calculate shopping need here
-		numberOfDays <- numberOfDays + abs((cycle - numberOfDays*daily)/daily);
-		write "Day: " + (numberOfDays+1);
-		// TODO: recalculate states
-	}
-	
 	
 //	reflex scan_product {
 //		ask people{
@@ -229,6 +229,31 @@ global {
 		}
 	 }
 	 
+	 
+	reflex _MAIN_ {
+		
+		do current_time ;
+		
+		
+	}
+
+	action current_time { //} when: every(daily#cycle) {
+
+		// Clock
+		numberOfDays <- numberOfDays + abs((cycle - numberOfDays*cycle_per_day)/cycle_per_day);
+		write "Day: " + (numberOfDays+1);
+		
+		// TODO: recalculate states'
+		if numberOfDays != prevDay{
+//			endDay <- true;
+			newDay <- true;
+		} else {
+			newDay <- false;
+		}
+		prevDay <- numberOfDays;
+	}
+	
+	
 	 // New
 	 reflex running when: run_business {
 	 	
@@ -251,101 +276,40 @@ global {
 ////////////////////////////////// END GLOBAL /////////////////////////////////////////
 
 
-//species pedestrian_path skills: [pedestrian_road]{
-//	aspect default { 
-//		draw shape  color: #gray;
-//	}
-//	aspect free_area_aspect {
-//		if(display_free_space and free_space != nil) {
-//			draw free_space color: #lightpink border: #black;
-//		}
-//		
-//	}
-//}
-
-//species shelves {
-//	aspect default {
-//		draw shape color:#pink;
-//	}
-//}
-
-//species wall {
-//	
-//	geometry free_space;
-//	float high <- rnd(10.0, 20.0);
-//	
-//	aspect demo {
-//		draw shape border: #black depth: high texture: ["../includes/top.png","../includes/texture5.jpg"];
-//	}
-//	
-//	aspect default {
-//		draw shape + (P_shoulder_length/2.0) color: #gray border: #black;
-//	}
-//}
-
-
-//species product_type parallel: true {
-//	
-//	string name <-"unknown";
-//	
-//	int price;
-//	string PrType;
-//	
-//	// Eye-level > top-level > lower-level
-//	float height_chance <- 0.5; //default a random chance of buying
-//	
-//	
-////	location <- any_location_in (on_of(shelves)); // and in a grid overlay, avoid location where we already has other product
-////	int height one_of(["high", "eye", "low"]);
-//	
-//	aspect default {
-//		draw circle(0.7) color: #black;
-//	}
-//}
-//species product_link parallel: true{
-//	
-//	aspect default {
-//		draw shape color: #orange;
-//	}
-//}
-
-
-//species counter {
-//	aspect default {
-//		draw shape color: rgb (128, 64, 3) border: #red;
-//	}
-//}
-
-//species floors {
-//	
-////	float capacity;
-//	aspect default {
-//		draw shape color:#pink;
-//	}
-//}
-
-//species doorIn {
-//	aspect default {
-//		draw shape border:#black color:#green;
-//	}
-//}
-//
-//species doorOut {
-//	aspect default {
-//		draw shape color: #navy border: #black;
-//	}
-//}
-
-
 
 experiment normal_sim type: gui {
+	
+	init {
+		create shelves from: shelves_shapefile;
+
+		open_area <- first(open_area_shape_file.contents);
+		create floors from:open_area_shape_file {
+			shape <- open_area;
+		}
+		
+		create pedestrian_path from: pedestrian_paths_shape_file {
+			list<geometry> fs <- free_spaces_shape_file overlapping self;
+			free_space <- fs first_with (each covers shape); 
+		}
+		network <- as_edge_graph(pedestrian_path);
+		ask pedestrian_path parallel: true{
+			do build_intersection_areas pedestrian_graph: network;
+		}
+
+		create counter from:counter_shapefile;
+		create doorIn from:doorIn_shapefile;
+		create doorOut from:doorOut_shapefile;
+		
+//		do create_population;
+	}
+	
 	float minimum_cycle_duration <- 0.02;
 		output {
 		display map type: opengl{
-//			species floors aspect: default;
+			species floors aspect: default;
 			species wall refresh: false;
 			species shelves aspect: default;
-			
+			species floor_cell;
 			species counter aspect: default;
 			species doorIn aspect: default;
 			species doorOut aspect: default;

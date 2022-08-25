@@ -7,10 +7,6 @@
 
 
 model People
-
-import "People.gaml"
-
-/* Insert your model definition here */
 import "../parameters.gaml"
 import "../Main.gaml"
 
@@ -18,7 +14,7 @@ import "../Main.gaml"
 global{
 	///////////PEDESTRIAN/////////////////
 	bool display_free_space <- false parameter: true;
-	bool display_force <- false parameter: true;
+	bool display_force <- true parameter: true;
 	bool display_target <- false parameter: true;
 	bool display_circle_min_dist <- true parameter: true;
 	
@@ -49,6 +45,36 @@ global{
 	float P_relaxion_SFM_simple parameter: true <- 0.54 category: "SFM simple" ;
 	float P_A_pedestrian_SFM_simple parameter: true <-4.5category: "SFM simple" ;
 	
+	geometry shape <- envelope(wall_shapefile);
+	
+	
+	
+	action create_population {
+		// Init random need shopping people with first_customers_rate
+		int need_shopping <- int(abs(first_customers_rate*nb_people));
+		loop times: need_shopping {
+			people p1 <- one_of(people where(each.need_product != true));
+			p1.need_product <- true;
+			p1.opinion <- _opinion; // init first opinion
+		}
+	}
+	
+	action create_friendship {
+		// Create random friendship graph
+		loop times: abs(nb_people*1.5) {
+
+			people p1 <- one_of(people);
+			people p2 <- one_of(list(people) - p1);
+			
+			create friendship_link  {
+				add edge (p1, p2, self) to: friendship_graph;
+				shape <- link(p1.friend_map,p2.friend_map);
+			}
+		}
+	}
+	
+	
+	
 	
 }
 
@@ -57,8 +83,8 @@ species people skills: [pedestrian, moving] parallel: true{
 	
 	
 	// assign from global
-	float opinion <- _opinion;
-	float happiness <- _happiness;
+	float opinion <- 0.0 max:1.0;
+	float happiness <- 0.0;
 	
 	
 	floor_cell cell;
@@ -129,23 +155,30 @@ species people skills: [pedestrian, moving] parallel: true{
 			relaxion_SFM <- P_relaxion_SFM_advanced;
 			gama_SFM <- P_gama_SFM_advanced;
 			lambda_SFM <- P_lambda_SFM_advanced;
-			minimal_distance <- P_minimal_distance_advanced;
+			minimal_distance <- product_scanning_range; // P_minimal_distance_advanced;
 		
 			}
-		
 	}
 	
-	action re_init {
-		write "re-init people";
-		walkinTime <- nil;
-		searching_time<- 0;
-		payment_time <- 0;
-		comeback_rate_threshold <- 0.7; // assume that first happiness > 0.5
-//		do add_desire(travel_to_shop);
-		target <- nil;
-		shopper <- false;
-	}
-
+	
+	
+	
+	
+	
+//	action re_init {
+//		write "re-init people";
+//		walkinTime <- nil;
+//		searching_time<- 0;
+//		payment_time <- 0;
+//		comeback_rate_threshold <- 0.7; // assume that first happiness > 0.5
+////		do add_desire(travel_to_shop);
+//		target <- nil;
+//		shopper <- false;
+//	}
+	
+	
+	
+	
 	/**
 	 * executed at each iteration to update the agent's Belief base, 
 	 * to know the changes in its environment (the world, the other 
@@ -163,92 +196,85 @@ species people skills: [pedestrian, moving] parallel: true{
 			need_product <- true;
 			//TODO Hiep: randomize product list
 			shopperCounts <- shopperCounts +1;
-			status <- "shopping";
-			shopper <- true;
-			walkinTime <- time;
+			status <- SHOPPING;
+//			shopper <- true;
+//			walkinTime <- time;
 		}
 	}
 	
-	// New
-	action calculation_happiness {
-		// happiness
-		float searchingTime <-  (foundTime - walkinTime)/patienceTime;
-		float paymentTime <- payment_time/patienceTime;
-		
-		float bought_per_shoppingList ;
-		if (length(boughtList) = 0){
-			bought_per_shoppingList <- 0;
-		}else{bought_per_shoppingList <- (1.0 - length(productList)/length(boughtList));}
-		
-		happiness <- bought_per_shoppingList - paymentTime - searchingTime;
-	}
-	// New
-	action calculation_opinion {
-		
-	}
-	// New
-	action spreadRumors {
-		ask friends{
-			if(abs(myself.opinion-opinion) < rumor_threshold ){ //only influence if there is a opinion difference
-				float temp <- happiness;
-			// influencing formulae
-			opinion <- opinion + converge*(myself.happiness-opinion);
-			myself.opinion <- myself.opinion + converge*abs(myself.opinion-temp);
-			}
-		}
-	}
-	// New
-	action update_end_state {
-		
-	}
+	
+	
+	
+	
+
+	
 	// New 
 	reflex monitor_statistic {
 		
 	}
+	
 	// New
 	reflex monitor_search_time {
 		
 	}
 	
 	// New
-	reflex monitor_current_state {
-		if shopper {
+	reflex _MAIN_monitor_current_state {
+		
+		/*We can simplify the model by making days running continuosly not stop or pause. Only pause by game rule and setup */
+//		if shopper {
+//			
+//
+//			searching_time <- walkinTime +patienceTime;
+//			
+//			
+//			if (time > searching_time){
+//				if (length(boughtList)>0){
+//					status <- "counter";
+//				}
+//			}
+//		
+//			if (length(productList)=0 and length(foundList)>0) {
+//				// found all product
+//				status <- "counter";
+//			}
+//			
+//			
+//		}
+		
+		
+		
+		// do at begining of each day
+		if newDay = true{
 			
+			status <- DONE;
+			// Do all end day calculation here
+			// Do all new day calculation here
+			do calculation_comeback;
+		} 
+		
 
-			searching_time <- walkinTime +patienceTime;
-			if (time > searching_time){
-				if (length(boughtList)>0){
-					status <- "counter";
-				}
-			}
-		
-			if (length(productList)=0 and length(foundList)>0) {
-				// found all product
-				status <- "counter";
-			}
-			
-			
-		}
-		
-
-//	reflex current_action {
-		
-		if status = "shopping" {
+		//Movement actions by status
+		if status = SHOPPING {
 			movement <- "wander";
 			do moveAround;
+			do get_product;
 		}
-		if status = "counter"{
-//			write "status " +status;
+		if status = COUNTER{
+
 			movement <- "counter";
 			write "movement " +movement;
 			do moveAround;
 		}
-		if status = "doorOut"{
-//			write "status " +status;
-			movement <- "doorOut";
-			write "movement " +movement;
-			do moveAround;
-		}
+//		if status = DONE {
+//			TODO: update and reinit
+//		}
+//		if status = DOOROUT{
+//
+//			movement <- DOOROUT;
+//			write "movement " +movement;
+//			do moveAround;
+//		}
 		
 		
 		
@@ -285,22 +311,70 @@ species people skills: [pedestrian, moving] parallel: true{
 	action get_product {
 		//find all products in list
 		// if found all change do add_belief(found_product);
-		movement <- "wander";
-		do moveAround;
+//		movement <- "wander";
+//		do moveAround;
 		// do check neightbor product;
 		do choose_best_product;
 		// do probability to buy 
 		do buying_decision;
 		
+		// check for end condition
+		do stop_shopping;
 		// paying (optional)
 		
-
 	}
+	
+	action stop_shopping{
+		
+		do population_calculation;
+		status <- DONE;
+		
+	}
+	
+		// New
+	action update_end_state {
+		
+	}
+	
+	action population_calculation {
+		
+		
+		// do by the end of the day
+		do calculation_happiness;
+		do spreadRumors;
+		
+		//TODO Update sale numbers
+	} 
+	
 
 
-
-
-	action moveAround {
+	// New
+	action calculation_happiness {
+		// happiness
+		float searchingTime <-  (foundTime - walkinTime)/patienceTime;
+		float paymentTime <- payment_time/patienceTime;
+		
+		float bought_per_shoppingList ;
+		if (length(boughtList) = 0){
+			bought_per_shoppingList <- 0;
+		}else{bought_per_shoppingList <- (1.0 - length(productList)/length(boughtList));}
+		
+		happiness <- bought_per_shoppingList - paymentTime - searchingTime;
+	}
+	
+	action spreadRumors {
+		ask friends{
+			if(abs(myself.opinion-opinion) < rumor_threshold ){ //only influence if there is a opinion difference
+				float temp <- happiness;
+			// influencing formulae
+			opinion <- opinion + converge*(myself.happiness-opinion);
+			myself.opinion <- myself.opinion + converge*abs(myself.opinion-temp);
+			}
+		}
+	}
+	
+	
+		action moveAround {
 		
 //		if (walkinTime !=nil and time > walkinTime +patienceTime){
 		if (movement = "doorOut"){
@@ -326,30 +400,6 @@ species people skills: [pedestrian, moving] parallel: true{
 		}
 		
 	}	
-	
-	
-	
-	action everyday_calculation {
-		write "everyday_calculation ";
-		
-		
-		do spreadRumors;
-		
-		//TODO Update sale numbers
-	} 
-	
-	action spreadRumors {
-		ask friends{
-			if(abs(myself.opinion-opinion) < rumor_threshold ){ //only influence if there is a opinion difference
-				float temp <- happiness;
-			// influencing formulae
-			opinion <- opinion + converge*(myself.happiness-opinion);
-			myself.opinion <- myself.opinion + converge*abs(myself.opinion-temp);
-			}
-		}
-	}
-	
-	
 	
 	aspect friends_default {
 		
@@ -393,3 +443,63 @@ species people skills: [pedestrian, moving] parallel: true{
 	}
 }
 
+
+experiment Pedestrian_exp type: gui {
+	
+	
+	
+	action create_population {
+		// Init random need shopping people with first_customers_rate
+		int need_shopping <- int(abs(first_customers_rate*nb_people));
+		loop times: need_shopping {
+			people p1 <- one_of(people where(each.need_product != true));
+			p1.need_product <- true;
+			p1.opinion <- 0.8; // init first opinion
+		}
+	}
+	
+	
+	init {
+		geometry shape <- envelope(wall_shapefile);
+		create shelves from: shelves_shapefile;
+		open_area <- first(open_area_shape_file.contents);
+		create floors from:open_area_shape_file {
+			shape <- open_area;
+		}
+		create pedestrian_path from: pedestrian_paths_shape_file {
+			list<geometry> fs <- free_spaces_shape_file overlapping self;
+			free_space <- fs first_with (each covers shape); 
+		}
+		network <- as_edge_graph(pedestrian_path);
+		ask pedestrian_path parallel: true{
+			do build_intersection_areas pedestrian_graph: network;
+		}
+		create counter from:counter_shapefile;
+		create doorIn from:doorIn_shapefile;
+		create doorOut from:doorOut_shapefile;
+		
+		create people number:nb_people {
+			location <- any_location_in(one_of(doorIn));
+		}
+		do create_population;
+	}
+	
+		reflex move {
+			ask people {
+				movement <- "wander";
+				do moveAround;
+			}
+		}
+		output {
+		display map type: opengl{
+			species wall refresh: false;
+			species shelves aspect: default;
+			species counter aspect: default;
+			species doorIn aspect: default;
+			species doorOut aspect: default;
+
+			species people;
+		}
+	}
+}
+ 
