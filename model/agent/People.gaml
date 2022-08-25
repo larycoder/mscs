@@ -11,8 +11,9 @@ model People
 import "People.gaml"
 
 /* Insert your model definition here */
-
+import "../parameters.gaml"
 import "../Main.gaml"
+
 
 global{
 	///////////PEDESTRIAN/////////////////
@@ -55,22 +56,23 @@ species people skills: [pedestrian, moving] parallel: true{
 	
 	
 	
-	
-	
-	
+	// assign from global
+	float opinion <- _opinion;
+	float happiness <- _happiness;
 	
 	
 	floor_cell cell;
 	
 	rgb color <- rnd_color(255);
 	float speed <- gauss(1,0.1) #km/#h min: 0.1 #km/#h;
+	
 	point target ;
 	point friend_map <- any_location_in(world);
 	string movement <- "wander";
 	string status <- "idle";
 	bool shopper <- false;
 	
-	float patienceTime <-  30#minute ;
+	
 	float walkinTime;
 	float searching_time<- 0;
 	float counting_time;
@@ -90,13 +92,8 @@ species people skills: [pedestrian, moving] parallel: true{
 //	float pick_dist<-1.0; //dist to pick the product
 	
 	list<people> friends;
-	float converge <- rnd(0.0,1.0);
-	float rumor_threshold <-0.2;	
-	float opinion <- 0 max:1.0;
 	
-	float happiness <-0 max:1.0;
 	
-	float comeback_rate_threshold <-0.6 min: 0.6; // as first opinion is 0.8
 	// probability of go shopping
 	float comeback_rate <- (float(need_product) + opinion + happiness)/3 max:1.0;
 	
@@ -148,21 +145,7 @@ species people skills: [pedestrian, moving] parallel: true{
 		target <- nil;
 		shopper <- false;
 	}
-	
-//	reflex update {
-//		do status;
-//		switch current_status{
-//			match need_product {
-//				do add_desire(shopping);
-//			}
-//		}
-//	}
-	
-//	action status {
-//		
-//	}
-	
-	
+
 	/**
 	 * executed at each iteration to update the agent's Belief base, 
 	 * to know the changes in its environment (the world, the other 
@@ -188,13 +171,33 @@ species people skills: [pedestrian, moving] parallel: true{
 	
 	// New
 	action calculation_happiness {
+		// happiness
+		float searchingTime <-  (foundTime - walkinTime)/patienceTime;
+		float paymentTime <- payment_time/patienceTime;
 		
+		float bought_per_shoppingList ;
+		if (length(boughtList) = 0){
+			bought_per_shoppingList <- 0;
+		}else{bought_per_shoppingList <- (1.0 - length(productList)/length(boughtList));}
+		
+		happiness <- bought_per_shoppingList - paymentTime - searchingTime;
 	}
 	// New
 	action calculation_opinion {
 		
 	}
-	//New
+	// New
+	action spreadRumors {
+		ask friends{
+			if(abs(myself.opinion-opinion) < rumor_threshold ){ //only influence if there is a opinion difference
+				float temp <- happiness;
+			// influencing formulae
+			opinion <- opinion + converge*(myself.happiness-opinion);
+			myself.opinion <- myself.opinion + converge*abs(myself.opinion-temp);
+			}
+		}
+	}
+	// New
 	action update_end_state {
 		
 	}
@@ -211,15 +214,7 @@ species people skills: [pedestrian, moving] parallel: true{
 	reflex monitor_current_state {
 		if shopper {
 			
-//			if cycle >= 200 and cycle <400 {
-//			status <- "counter";
-////			write "cycle " +cycle;
-//			}
-//			if cycle >= 400 {
-//				status <- "doorOut";
-////				write "status " +status;
-////				write "cycle " +cycle;
-//			}
+
 			searching_time <- walkinTime +patienceTime;
 			if (time > searching_time){
 				if (length(boughtList)>0){
@@ -235,8 +230,7 @@ species people skills: [pedestrian, moving] parallel: true{
 			
 		}
 		
-//	}
-//		
+
 //	reflex current_action {
 		
 		if status = "shopping" {
@@ -264,19 +258,6 @@ species people skills: [pedestrian, moving] parallel: true{
 	// New
 	action choose_best_product {
 		
-//		list<point> possible_product <- get_beliefs_with_name(prod_at_location) collect (point(get_predicate(mental_state (each)).values["location_value"]));
-//		list<point> reject_prod <- get_beliefs_with_name(reject_prod_location) collect (point(get_predicate(mental_state (each)).values["location_value"]));
-//		
-//		possible_product <- possible_product - reject_prod;
-//		
-//		if (empty(possible_product) or (length(productList)=0 and length(foundList)>0)) {
-//			write "empty product";
-//			do remove_intention(found_product, true); 
-//			write "choose_best_product remove_intention(found_product) ";
-//		} else {
-//			target <- (possible_product with_min_of (each distance_to self)).location;
-//		}
-//		do remove_intention(choose_product, true); 
 
 		if cell != nil{
     		if   (not empty (cell.neighbors)) {
@@ -288,6 +269,7 @@ species people skills: [pedestrian, moving] parallel: true{
 				loop i over: chosen_one {
 					i.color_code <-2;
 					// add product to list here
+					
 				}
 			}
 		}
@@ -312,45 +294,7 @@ species people skills: [pedestrian, moving] parallel: true{
 		
 		// paying (optional)
 		
-//		if (target = nil) {
-//			do choose_best_product;
-//			
-//		} 
-//		else {
-//			do goto target: target ;
-//			if (target distance_to location) <=1  {
-//				product_type current_product<- product_type first_with (target = each.location);
-//				
-//				if (current_product != nil and flip(current_product.height_chance) and length(productList)>0) {
-//					
-//				 	write "get_gold add_belief(has_gold) ";
-////					ask current_product {quantity <- quantity - 1;}	
-//
-//					// TODO Hiep Option: add product to list
-//					productList <- [];
-//					foundList <- ["pen"];
-//					boughtList <- ["pen"];
-//					found_number <- found_number +1 ; 
-//					// if all product is getted from this then we update belief
-//					if (length(productList)=0 and length(foundList)>0){
-//						
-////						do add_belief(found_all_product);
-//						foundTime <- time;
-////						do remove_belief(found_product);
-////						do remove_belief(shopping);
-//
-//						write "update when found all product";
-//					}else{
-////						do add_belief(found_product);
-//					}	
-//				}
-//				else{
-////					do add_belief(new_predicate(reject_prod_location, ["location_value"::target]));
-//					write "get_product new_predicate(reject_prod_location) ";
-//				}
-//
-//				target <- nil;
-//			}}
+
 	}
 
 
@@ -382,6 +326,30 @@ species people skills: [pedestrian, moving] parallel: true{
 		}
 		
 	}	
+	
+	
+	
+	action everyday_calculation {
+		write "everyday_calculation ";
+		
+		
+		do spreadRumors;
+		
+		//TODO Update sale numbers
+	} 
+	
+	action spreadRumors {
+		ask friends{
+			if(abs(myself.opinion-opinion) < rumor_threshold ){ //only influence if there is a opinion difference
+				float temp <- happiness;
+			// influencing formulae
+			opinion <- opinion + converge*(myself.happiness-opinion);
+			myself.opinion <- myself.opinion + converge*abs(myself.opinion-temp);
+			}
+		}
+	}
+	
+	
 	
 	aspect friends_default {
 		

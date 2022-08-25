@@ -8,15 +8,29 @@ model Background
 
 /* Insert your model definition here */
 global {
-	shape_file pedestrian_paths_file <- shape_file("../../results/pedestrian paths.shp");
-	shape_file open_area_file <- shape_file("../../results/open area.shp");
 	shape_file free_spaces_shape_file <- shape_file("../../results/free spaces.shp");
-	shape_file shelves_shape_file <- shape_file("../../results/shelves.shp");
-	shape_file wall_shape_file <- shape_file("../../results/walls.shp");
-	shape_file door_in_shape_file <- shape_file("../../results/doorin.shp");
-	shape_file door_out_shape_file <- shape_file("../../results/doorout.shp");
-	geometry shape <- envelope(open_area_file);
-
+	shape_file open_area_shape_file <- shape_file("../../results/open area.shp");
+	shape_file pedestrian_paths_shape_file <- shape_file("../../results/pedestrian paths.shp");
+	
+	file counter_shapefile <- file("../../results/counter.shp");
+	file doorIn_shapefile <- file("../../results/doorin.shp");
+	file doorOut_shapefile <- file("../../results/doorout.shp");
+	file floor_shapefile <- file("../../results/floor.shp");
+	file shelves_shapefile <- file("../../results/shelves.shp");
+	file wall_shapefile <- file("../../results/walls.shp");
+	
+	
+	geometry open_area ;
+	geometry free_space <- envelope(free_spaces_shape_file);
+	geometry shape_counter <- envelope(counter_shapefile);
+	geometry shape_doorIn <- envelope(doorIn_shapefile);
+	geometry shape_doorOut <- envelope(doorOut_shapefile);
+	geometry shape_floor <- envelope(floor_shapefile);
+	geometry shape_wall <- envelope(wall_shapefile);
+	
+	graph network;
+	geometry shape <- envelope(wall_shapefile);
+	
 	// const
 	string DOOR_IN <- "door_in" const: true;
 	string DOOR_OUT <- "door_out" const: true;
@@ -61,7 +75,13 @@ species floors {
 
 }
 
-species shelf {
+species counter {
+	aspect default {
+		draw shape color: rgb (128, 64, 3) border: #red;
+	}
+}
+
+species shelves {
 	rgb color <- #brown;
 
 	aspect default {
@@ -84,13 +104,25 @@ species wall {
 
 }
 
-species door {
-	string door_type <- DOOR_IN;
+//species door {
+//	string door_type <- DOOR_IN;
+//
+//	aspect default {
+//		draw shape color: door_type = DOOR_IN ? #green : #navy border: #black;
+//	}
+//
+//}
 
+species doorIn {
 	aspect default {
-		draw shape color: door_type = DOOR_IN ? #green : #navy border: #black;
+		draw shape border:#black color:#green;
 	}
+}
 
+species doorOut {
+	aspect default {
+		draw shape color: #navy border: #black;
+	}
 }
 
 grid floor_cell width: shape.width height: shape.height neighbors: 8 {
@@ -128,17 +160,27 @@ species mouse_zone {
 experiment gui_background_example type: gui {
 
 	init {
-		create pedestrian_path from: pedestrian_paths_file;
-		create floors from: open_area_file;
-		create shelf from: shelves_shape_file;
-		create wall from: wall_shape_file;
-		create door from: door_in_shape_file {
-			door_type <- DOOR_IN;
+//		create pedestrian_path from: pedestrian_paths_file;
+//		create floors from: open_area_file;
+		create shelves from: shelves_shapefile;
+//		create wall from: wall_shape_file;
+		open_area <- first(open_area_shape_file.contents);
+		create floors from:open_area_shape_file {
+			shape <- open_area;
+		}
+		
+		create pedestrian_path from: pedestrian_paths_shape_file {
+			list<geometry> fs <- free_spaces_shape_file overlapping self;
+			free_space <- fs first_with (each covers shape); 
+		}
+		network <- as_edge_graph(pedestrian_path);
+		ask pedestrian_path parallel: true{
+			do build_intersection_areas pedestrian_graph: network;
 		}
 
-		create door from: door_out_shape_file {
-			door_type <- DOOR_OUT;
-		}
+		create counter from:counter_shapefile;
+		create doorIn from:doorIn_shapefile;
+		create doorOut from:doorOut_shapefile;
 
 	}
 
@@ -147,8 +189,9 @@ experiment gui_background_example type: gui {
 			species floors;
 			species pedestrian_path;
 			species wall;
-			species shelf;
-			species door;
+			species shelves;
+			species doorIn;
+			species doorOut;
 			species floor_cell;
 			species mouse_zone;
 		}

@@ -6,6 +6,7 @@
 */
 model Product
 
+import "../parameters.gaml"
 import "Background.gaml"
 import "../Main.gaml"
 /**

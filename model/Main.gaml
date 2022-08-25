@@ -21,19 +21,35 @@ import "parameters.gaml"
 import "agent/People.gaml"
 import "agent/Reputation.gaml"
 import "agent/Product.gaml"
+import "agent/Background.gaml"
 
 
 global {
-	shape_file free_spaces_shape_file <- shape_file("../results/free spaces.shp");
-	file shelves_shapefile <- file("../results/shelves.shp");
-	file wall_shapefile <- file("../results/walls.shp");
-	shape_file open_area_shape_file <- shape_file("../results/open area.shp");
-	shape_file pedestrian_paths_shape_file <- shape_file("../results/pedestrian paths.shp");
-	graph network;
-	geometry shape <- envelope(wall_shapefile);
-
+//	shape_file free_spaces_shape_file <- shape_file("../results/free spaces.shp");
+//	shape_file open_area_shape_file <- shape_file("../results/open area.shp");
+//	shape_file pedestrian_paths_shape_file <- shape_file("../results/pedestrian paths.shp");
+//	
+//	file counter_shapefile <- file("../results/counter.shp");
+//	file doorIn_shapefile <- file("../results/doorin.shp");
+//	file doorOut_shapefile <- file("../results/doorout.shp");
+//	file floor_shapefile <- file("../results/floor.shp");
+//	file shelves_shapefile <- file("../results/shelves.shp");
+//	file wall_shapefile <- file("../results/walls.shp");
+//	
+//	
+//	geometry open_area ;
+//	geometry free_space <- envelope(free_spaces_shape_file);
+//	geometry shape_counter <- envelope(counter_shapefile);
+//	geometry shape_doorIn <- envelope(doorIn_shapefile);
+//	geometry shape_doorOut <- envelope(doorOut_shapefile);
+//	geometry shape_floor <- envelope(floor_shapefile);
+//	geometry shape_wall <- envelope(wall_shapefile);
+//	
+//	graph network;
+//	
+//	geometry shape <- envelope(wall_shapefile);
 	
-//	float step <- 0.1;
+	//	float step <- 0.1;
 	int remaining_time min: 0;
 	bool run_business <- false ;
 	int current_cycle <- 0 ;
@@ -41,24 +57,10 @@ global {
 	
 	int nb_people <- 10;
 	int nb_product <- 15;
-	geometry open_area ;
-	geometry free_space <- envelope(free_spaces_shape_file);
 	
 	//social graph (not spatial) representing the friendship links between people
 	graph friendship_graph <- graph([]);
 	graph product_graph <- graph([]);
-	
-	file counter_shapefile <- file("../results/counter.shp");
-	file doorIn_shapefile <- file("../results/doorin.shp");
-	file doorOut_shapefile <- file("../results/doorout.shp");
-	file floor_shapefile <- file("../results/floor.shp");
-	
-	
-	geometry shape_counter <- envelope(counter_shapefile);
-	geometry shape_doorIn <- envelope(doorIn_shapefile);
-	geometry shape_doorOut <- envelope(doorOut_shapefile);
-	geometry shape_floor <- envelope(floor_shapefile);
-	geometry shape_wall <- envelope(wall_shapefile);
 	
 	//Time definition
 	float step <- 1 #second; 
@@ -74,27 +76,26 @@ global {
 
 	
 	init {
-		create counter from:counter_shapefile;
-		create doorIn from:doorIn_shapefile;
-		create doorOut from:doorOut_shapefile;
-		create floors from:open_area_shape_file {
-			shape <- open_area;
-		}
-		create wall from:wall_shapefile;
+//		create counter from:counter_shapefile;
+//		create doorIn from:doorIn_shapefile;
+//		create doorOut from:doorOut_shapefile;
+//		create floors from:open_area_shape_file {
+//			shape <- open_area;
+//		}
+//		create wall from:wall_shapefile;
 		
-		open_area <- first(open_area_shape_file.contents);
-		create shelves from:shelves_shapefile;
+//		open_area <- first(open_area_shape_file.contents);
+//		create shelves from:shelves_shapefile;
 		
-		create pedestrian_path from: pedestrian_paths_shape_file {
-			list<geometry> fs <- free_spaces_shape_file overlapping self;
-			free_space <- fs first_with (each covers shape); 
-			
-		}
+//		create pedestrian_path from: pedestrian_paths_shape_file {
+//			list<geometry> fs <- free_spaces_shape_file overlapping self;
+//			free_space <- fs first_with (each covers shape); 
+//		}
 
-		network <- as_edge_graph(pedestrian_path);
-		ask pedestrian_path parallel: true{
-			do build_intersection_areas pedestrian_graph: network;
-		}
+//		network <- as_edge_graph(pedestrian_path);
+//		ask pedestrian_path parallel: true{
+//			do build_intersection_areas pedestrian_graph: network;
+//		}
 		
 		create people number:nb_people {
 //			location <- any_location_in(one_of(open_area));
@@ -262,11 +263,11 @@ global {
 //	}
 //}
 
-species shelves {
-	aspect default {
-		draw shape color:#pink;
-	}
-}
+//species shelves {
+//	aspect default {
+//		draw shape color:#pink;
+//	}
+//}
 
 //species wall {
 //	
@@ -309,11 +310,11 @@ species shelves {
 //}
 
 
-species counter {
-	aspect default {
-		draw shape color: rgb (128, 64, 3) border: #red;
-	}
-}
+//species counter {
+//	aspect default {
+//		draw shape color: rgb (128, 64, 3) border: #red;
+//	}
+//}
 
 //species floors {
 //	
@@ -323,17 +324,17 @@ species counter {
 //	}
 //}
 
-species doorIn {
-	aspect default {
-		draw shape border:#black color:#green;
-	}
-}
-
-species doorOut {
-	aspect default {
-		draw shape color: #navy border: #black;
-	}
-}
+//species doorIn {
+//	aspect default {
+//		draw shape border:#black color:#green;
+//	}
+//}
+//
+//species doorOut {
+//	aspect default {
+//		draw shape color: #navy border: #black;
+//	}
+//}
 
 
 

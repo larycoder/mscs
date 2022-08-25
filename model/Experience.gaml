@@ -8,7 +8,7 @@ model Experience
 
 import "agent/Background.gaml"
 import "agent/Product.gaml"
-//import "Main.gaml"
+import "Main.gaml"
 
 /* Insert your model definition here */
 global {
