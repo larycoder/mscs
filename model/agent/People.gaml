@@ -47,31 +47,31 @@ global{
 	
 	geometry shape <- envelope(wall_shapefile);
 	
+	graph friendship_graph <- graph([]);
 	
-	
-	action create_population {
-		// Init random need shopping people with first_customers_rate
-		int need_shopping <- int(abs(first_customers_rate*nb_people));
-		loop times: need_shopping {
-			people p1 <- one_of(people where(each.need_product != true));
-			p1.need_product <- true;
-			p1.opinion <- _opinion; // init first opinion
-		}
-	}
-	
-	action create_friendship {
-		// Create random friendship graph
-		loop times: abs(nb_people*1.5) {
-
-			people p1 <- one_of(people);
-			people p2 <- one_of(list(people) - p1);
-			
-			create friendship_link  {
-				add edge (p1, p2, self) to: friendship_graph;
-				shape <- link(p1.friend_map,p2.friend_map);
-			}
-		}
-	}
+//	action create_population {
+//		// Init random need shopping people with first_customers_rate
+//		int need_shopping <- int(abs(first_customers_rate*nb_people));
+//		loop times: need_shopping {
+//			people p1 <- one_of(people where(each.need_product != true));
+//			p1.need_product <- true;
+//			p1.opinion <- _opinion; // init first opinion
+//		}
+//	}
+//	
+//	action create_friendship {
+//		// Create random friendship graph
+//		loop times: abs(nb_people*1.5) {
+//
+//			people p1 <- one_of(people);
+//			people p2 <- one_of(list(people) - p1);
+//			
+//			create friendship_link  {
+//				add edge (p1, p2, self) to: friendship_graph;
+//				shape <- link(p1.friend_map,p2.friend_map);
+//			}
+//		}
+//	}
 	
 	
 	
@@ -124,7 +124,7 @@ species people skills: [pedestrian, moving] parallel: true{
 	float comeback_rate <- (float(need_product) + opinion + happiness)/3 max:1.0;
 	
 	init{
-		friends <- list<people>(friendship_graph neighbors_of (self));
+		// friends <- list<people>(friendship_graph neighbors_of (self));
 		
 		
 		///////////PEDESTRIAN/////////////////
@@ -176,7 +176,9 @@ species people skills: [pedestrian, moving] parallel: true{
 //		shopper <- false;
 //	}
 	
-	
+	action make_friends {
+		friends <- list<people>(friendship_graph neighbors_of (self));
+	}
 	
 	
 	/**
@@ -457,8 +459,21 @@ experiment Pedestrian_exp type: gui {
 			p1.opinion <- 0.8; // init first opinion
 		}
 	}
+	action create_friendship {
+		// Create random friendship graph
+		loop times: abs(nb_people*1.5) {
+
+			people p1 <- one_of(people);
+			people p2 <- one_of(list(people) - p1);
+			
+			create friendship_link  {
+				add edge (p1, p2, self) to: friendship_graph;
+				shape <- link(p1.friend_map,p2.friend_map);
+			}
+		}
+	}
 	
-	
+//	list<people> friends;
 	init {
 		geometry shape <- envelope(wall_shapefile);
 		create shelves from: shelves_shapefile;
@@ -482,8 +497,15 @@ experiment Pedestrian_exp type: gui {
 			location <- any_location_in(one_of(doorIn));
 		}
 		do create_population;
+		do create_friendship;
+		ask people{
+			
+			do make_friends;
+		}
+		
+//		friends <- list<people>(friendship_graph neighbors_of (self));
 	}
-	
+		
 		reflex move {
 			ask people {
 				movement <- "wander";

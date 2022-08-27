@@ -60,8 +60,8 @@ global {
 	int nb_product <- 15;
 	
 	//social graph (not spatial) representing the friendship links between people
-	graph friendship_graph <- graph([]);
-	graph product_graph <- graph([]);
+//	graph friendship_graph <- graph([]);
+//	graph product_graph <- graph([]);
 	
 	//Time definition
 	float step <- 1 #second; 
@@ -100,15 +100,15 @@ global {
 //			do build_intersection_areas pedestrian_graph: network;
 //		}
 		
-		create people number:nb_people {
-//			location <- any_location_in(one_of(open_area));
-			location <- any_location_in(one_of(doorIn));
-//			write "patienceTime default " + patienceTime ;
-			patienceTime <- myself.patienceTime_global; 
-			
-//			write "patienceTime " + myself.patienceTime + " " + patienceTime ;
-			
-		}	
+//		create people number:nb_people {
+////			location <- any_location_in(one_of(open_area));
+//			location <- any_location_in(one_of(doorIn));
+////			write "patienceTime default " + patienceTime ;
+//			patienceTime <- myself.patienceTime_global; 
+//			
+////			write "patienceTime " + myself.patienceTime + " " + patienceTime ;
+//			
+//		}	
 		
 //		// Init random need shopping people with first_customers_rate
 //		int need_shopping <- int(abs(first_customers_rate*nb_people));
@@ -119,7 +119,7 @@ global {
 //			p1.opinion <- 0.8; // init first opinion
 //			
 //		}
-		do create_population;
+//		do create_population;
 		
 //		// Create random friendship graph
 //		loop times: abs(nb_people*1.5) {
@@ -132,7 +132,7 @@ global {
 //				shape <- link(p1.friend_map,p2.friend_map);
 //			}
 //		}
-		do create_friendship;
+//		do create_friendship;
 		
 //		create product_type number:nb_product{
 //			// TODO Hiep: load from csv file
@@ -234,15 +234,24 @@ global {
 		
 		do current_time ;
 		
+		// people start with status from yesterday
+		
+		// Pause every day to re config strategy
+		if newDay = true {
+			write "Day: " + numberOfDays ;
+			// do all end of day calculation
+			do pause;
+		}
 		
 	}
 
 	action current_time { //} when: every(daily#cycle) {
 
 		// Clock
+		write "bug 1";
 		numberOfDays <- numberOfDays + abs((cycle - numberOfDays*cycle_per_day)/cycle_per_day);
-		write "Day: " + (numberOfDays+1);
-		
+//		write "Day: " + (numberOfDays+1);
+		write "bug 2";
 		// TODO: recalculate states'
 		if numberOfDays != prevDay{
 //			endDay <- true;
@@ -250,17 +259,18 @@ global {
 		} else {
 			newDay <- false;
 		}
+		write "bug 3";
 		prevDay <- numberOfDays;
 	}
 	
 	
 	 // New
-	 reflex running when: run_business {
-	 	
-	 	
-	 	do calculation_end_of_day;
-	 	current_cycle <- current_cycle +1;
-	 }
+//	 reflex running when: run_business {
+//	 	
+//	 	
+//	 	do calculation_end_of_day;
+//	 	current_cycle <- current_cycle +1;
+//	 }
 	 
 	 // New
 //	 reflex end_of_day {
@@ -274,7 +284,9 @@ global {
 
 
 ////////////////////////////////// END GLOBAL /////////////////////////////////////////
-
+experiment time_sim type:gui {
+	
+}
 
 
 experiment normal_sim type: gui {
