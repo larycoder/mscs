@@ -38,7 +38,28 @@ global {
 
 	// store
 	float P_shoulder_length <- 0.45;	
-
+	
+	
+	
+	init {
+		geometry shape <- envelope(wall_shapefile);
+		create shelves from: shelves_shapefile;
+		open_area <- first(open_area_shape_file.contents);
+		create floors from:open_area_shape_file {
+			shape <- open_area;
+		}
+		create pedestrian_path from: pedestrian_paths_shape_file {
+			list<geometry> fs <- free_spaces_shape_file overlapping self;
+			free_space <- fs first_with (each covers shape); 
+		}
+		network <- as_edge_graph(pedestrian_path);
+		ask pedestrian_path parallel: true{
+			do build_intersection_areas pedestrian_graph: network;
+		}
+		create counter from:counter_shapefile;
+		create doorIn from:doorIn_shapefile;
+		create doorOut from:doorOut_shapefile;
+	}
 	// if want to have red dot at mouse point, add this to mouse_move event
 	action follow_mouse {
 		if (length(mouse_zone) = 0) {
@@ -194,7 +215,7 @@ experiment gui_background_example type: gui {
 			species doorIn;
 			species doorOut;
 			species floor_cell;
-			species mouse_zone;
+			
 		}
 
 	}

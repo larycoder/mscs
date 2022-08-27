@@ -49,33 +49,6 @@ global{
 	
 	graph friendship_graph <- graph([]);
 	
-//	action create_population {
-//		// Init random need shopping people with first_customers_rate
-//		int need_shopping <- int(abs(first_customers_rate*nb_people));
-//		loop times: need_shopping {
-//			people p1 <- one_of(people where(each.need_product != true));
-//			p1.need_product <- true;
-//			p1.opinion <- _opinion; // init first opinion
-//		}
-//	}
-//	
-//	action create_friendship {
-//		// Create random friendship graph
-//		loop times: abs(nb_people*1.5) {
-//
-//			people p1 <- one_of(people);
-//			people p2 <- one_of(list(people) - p1);
-//			
-//			create friendship_link  {
-//				add edge (p1, p2, self) to: friendship_graph;
-//				shape <- link(p1.friend_map,p2.friend_map);
-//			}
-//		}
-//	}
-	
-	
-	
-	
 }
 
 species people skills: [pedestrian, moving] parallel: true{
@@ -83,9 +56,10 @@ species people skills: [pedestrian, moving] parallel: true{
 	
 	
 	// assign from global
-	float opinion <- 0.0 max:1.0;
+	float opinion max:1.0;
 	float happiness <- 0.0;
-	
+	int expensive_tolerance <-3;
+	float price_happines <-1 ;
 	
 	floor_cell cell;
 	
@@ -105,14 +79,17 @@ species people skills: [pedestrian, moving] parallel: true{
 	float payment_time <- 0;
 	
 	bool need_product <- false;
-	list<string> productList <- ["pen"];
-
-
-	list<point> checkProd;
-	list<string> boughtList <- [];
-	list<string> foundList <- [];
+	list<string> productList <- ["pen", "examsheet", "coffee_pot", "curtains"];
+	int needNumber <- length(productList);
+//	list<point> checkProd;
+	map<string,int> boughtList <- []; // "price_type"::price
+//	map<string,int> map_of_string_int <- ["A"::1,"B"::2,"C"::3];
+	list<product_type> foundList <- [];
+	
 	int found_number <-0;
 	float foundTime;
+	
+	float money_spend <- 0.0;
 //	string current_status;
 //	float view_dist<-5.0; //dist seeing the product
 //	float pick_dist<-1.0; //dist to pick the product
@@ -190,22 +167,27 @@ species people skills: [pedestrian, moving] parallel: true{
 	
 	action calculation_comeback { //when: every(daily#cycle){
 //		write "run comeback " +opinion;
-
+		write "======== Calculate comeback: " +name+ " ==========";
+		write "need_product "+need_product;
+		write "opinion "+opinion;
+		write "happiness "+happiness;
+		
 		comeback_rate <- (int(need_product) + opinion + happiness)/3;
-//		write "comeback_rate " + comeback_rate;
+		write "comeback_rate " + comeback_rate;
 		if  (comeback_rate >= comeback_rate_threshold) {
 			
 			need_product <- true;
 			//TODO Hiep: randomize product list
 			shopperCounts <- shopperCounts +1;
 			status <- SHOPPING;
+			write "status "+ status;
 //			shopper <- true;
 //			walkinTime <- time;
 		}
 	}
 	
 	
-	
+
 	
 	
 
@@ -245,44 +227,56 @@ species people skills: [pedestrian, moving] parallel: true{
 //		}
 		
 		
-		
 		// do at begining of each day
 		if newDay = true{
-			
-			status <- DONE;
+//			write"New day _people";
+//			status <- DONE;
 			// Do all end day calculation here
+			do pay;
+			do population_calculation;
+//			do calculation_comeback;
+
+			
+		} else {
 			// Do all new day calculation here
-			do calculation_comeback;
-		} 
+			
+			
+			//Movement actions by status
+			if status = SHOPPING {
+				movement <- "wander";
+				do moveAround;
+				do get_product;
+				if length (productList) =0{
+					status <- COUNTER;
+				}
+			}
+			if status = COUNTER{
+//	
+				movement <- "counter";
+//				write "movement " +movement;
+				do moveAround;
+			}
+			if status = DONE {
+				
+			}
 		
-
-		//Movement actions by status
-		if status = SHOPPING {
-			movement <- "wander";
-			do moveAround;
-			do get_product;
 		}
-		if status = COUNTER{
-
-			movement <- "counter";
-			write "movement " +movement;
-			do moveAround;
-		}
-//		if status = DONE {
-//			TODO: update and reinit
-//		}
-//		if status = DOOROUT{
-//
-//			movement <- DOOROUT;
-//			write "movement " +movement;
-//			do moveAround;
-//		}
-		
-		
 		
 	}
 
 	
+	reflex update_cell_position {
+    	floor_cell next_cell <- nil;
+    	ask floor_cell at_distance (product_scanning_range){
+		if self overlaps myself {
+			next_cell <- self;
+			myself.cell <- next_cell;
+//			myself.my_plot.color_value <- 1;
+			
+		}
+	}
+    }
+    
 	// New
 	action choose_best_product {
 		
@@ -291,12 +285,41 @@ species people skills: [pedestrian, moving] parallel: true{
     		if   (not empty (cell.neighbors)) {
     			
 			list<product_place> chosen_one ;
+			
 			ask floor_cell at_distance (product_scanning_range){
+				
 				chosen_one <- product_place where ( each.cell overlaps self );	//This do the trick
-				write " scanning  " + length(chosen_one);
+//				if length(chosen_one)>0{
+//					write " scanning  " + length(chosen_one);
+//				}
+
 				loop i over: chosen_one {
-					i.color_code <-2;
+					i.color_code <-1;
+//					write "Product place name: " + i.name;
+
 					// add product to list here
+//					write "Products Found";
+//					write "high: " + i.high.type.name;
+//					write "-> price: " + i.high.type.price_type + " " + i.high.type.price;
+//					write "eye: " + i.eye.type.name;
+//					write "-> price: " + i.eye.type.price_type + " " + i.eye.type.price;
+//					write "low: " + i.low.type.name;
+//					write "-> price: " + i.low.type.price_type + " " + i.low.type.price;
+					
+					// Priority level:  Eye-level > top-level > lower-level
+					if i.eye.type.name in myself.productList{
+						add i.eye.type to: myself.foundList;
+						remove i.eye.type.name from: myself.productList;
+					}
+					if i.high.type.name in myself.productList{
+						add i.high.type to: myself.foundList;
+						remove i.high.type.name from: myself.productList;
+					}
+					if i.low.type.name in myself.productList{
+						add i.low.type to: myself.foundList;
+						remove i.low.type.name from: myself.productList;
+					}
+					
 					
 				}
 			}
@@ -306,7 +329,10 @@ species people skills: [pedestrian, moving] parallel: true{
 	
 	// New
 	action buying_decision {
-		
+		loop i over: foundList{
+
+			add i.price_type::i.price to: boughtList;
+		}
 	}
 	
 	// New
@@ -321,20 +347,36 @@ species people skills: [pedestrian, moving] parallel: true{
 		do buying_decision;
 		
 		// check for end condition
-		do stop_shopping;
+//		do stop_shopping;
 		// paying (optional)
 		
 	}
-	
-	action stop_shopping{
+	action pay{
+//		money_spend
+		loop i over: boughtList.pairs{
+			
+			
+			if i.key = "high"{
+				
+				expensive_tolerance <- expensive_tolerance -1;
+				if expensive_tolerance >= 0 {	// Price type revert decision in here
+					money_spend <- money_spend + i.value;
+					found_number <- found_number +1;
+					price_happines <- price_happines*high_price_happiness;
+				}
+			}else{
+				money_spend <- money_spend + i.value;
+				found_number <- found_number +1;
+				if i.key = "low"{
+					price_happines <- price_happines*low_price_happiness;
+				}
+				if i.key = "medium"{
+					price_happines <- price_happines*medium_price_happiness;
+				}
+			}
+		}
 		
-		do population_calculation;
-		status <- DONE;
 		
-	}
-	
-		// New
-	action update_end_state {
 		
 	}
 	
@@ -353,15 +395,15 @@ species people skills: [pedestrian, moving] parallel: true{
 	// New
 	action calculation_happiness {
 		// happiness
-		float searchingTime <-  (foundTime - walkinTime)/patienceTime;
-		float paymentTime <- payment_time/patienceTime;
+//		float searchingTime <-  (foundTime - walkinTime)/patienceTime;
+//		float paymentTime <- payment_time/patienceTime;
 		
 		float bought_per_shoppingList ;
-		if (length(boughtList) = 0){
+		if (found_number = 0){
 			bought_per_shoppingList <- 0;
-		}else{bought_per_shoppingList <- (1.0 - length(productList)/length(boughtList));}
+		}else{bought_per_shoppingList <- (found_number/needNumber);}
 		
-		happiness <- bought_per_shoppingList - paymentTime - searchingTime;
+		happiness <- (bought_per_shoppingList) * price_happines;
 	}
 	
 	action spreadRumors {
@@ -388,7 +430,7 @@ species people skills: [pedestrian, moving] parallel: true{
 		
 		}
 		if (movement = "counter") {
-			write "run to counter";
+//			write "run to counter";
 			if (final_waypoint = nil) {
 			do compute_virtual_path pedestrian_graph:network target: any_location_in(one_of(counter)) ;
 		}
@@ -410,9 +452,9 @@ species people skills: [pedestrian, moving] parallel: true{
 		 *	Red: friends who doesnt
 		 */
 		if need_product{ 
-			draw circle( 0.5, friend_map )  color: #green; 
+			draw circle( 0.5, location )  color: #green; 
 		}else{
-			draw circle( 0.5, friend_map )  color: #red;
+			draw circle( 0.5, location )  color: #red;
 		}
 		
 	}
@@ -444,6 +486,107 @@ species people skills: [pedestrian, moving] parallel: true{
 		}	
 	}
 }
+
+
+
+experiment main_people_exp type: gui {
+	
+	
+	
+	action create_population {
+		// Init random need shopping people with first_customers_rate
+		int need_shopping <- int(abs(first_customers_rate*nb_people));
+		loop times: need_shopping {
+			people p1 <- one_of(people where(each.need_product != true));
+			p1.need_product <- true;
+			p1.opinion <- 0.8; // init first opinion
+		}
+	}
+	action create_friendship {
+		// Create random friendship graph
+		loop times: abs(nb_people*1.5) {
+
+			people p1 <- one_of(people);
+			people p2 <- one_of(list(people) - p1);
+			
+			create friendship_link  {
+				add edge (p1, p2, self) to: friendship_graph;
+				shape <- link(p1,p2);
+			}
+		}
+	}
+	
+//	list<people> friends;
+	init {
+		geometry shape <- envelope(wall_shapefile);
+		create shelves from: shelves_shapefile;
+		open_area <- first(open_area_shape_file.contents);
+		create floors from:open_area_shape_file {
+			shape <- open_area;
+		}
+		create pedestrian_path from: pedestrian_paths_shape_file {
+			list<geometry> fs <- free_spaces_shape_file overlapping self;
+			free_space <- fs first_with (each covers shape); 
+		}
+		network <- as_edge_graph(pedestrian_path);
+		ask pedestrian_path parallel: true{
+			do build_intersection_areas pedestrian_graph: network;
+		}
+		create counter from:counter_shapefile;
+		create doorIn from:doorIn_shapefile;
+		create doorOut from:doorOut_shapefile;
+		
+		create people number:nb_people {
+			location <- any_location_in(one_of(doorIn));
+		}
+		do create_population;
+		do create_friendship;
+		ask people{
+			
+			do make_friends;
+		}
+		
+//		friends <- list<people>(friendship_graph neighbors_of (self));
+	}
+		
+//		reflex move {
+//			ask people {
+//				movement <- "wander";
+//				do moveAround;
+//			}
+//		}
+		
+		
+		
+		
+		
+		output {
+		display map type: opengl{
+			species wall refresh: false;
+			species shelves aspect: default;
+//			species counter aspect: default;
+			species doorIn aspect: default;
+//			species doorOut aspect: default;
+//			species floor_cell;
+			species people;
+		}
+		
+		display friendship type: opengl{
+			species friendship_link ;
+			species people aspect: friends_default;
+			}
+			
+		display reputation_graph refresh: every(daily#cycle) { //refresh reputation graph daily
+			
+			chart "Reputation in Population" type: series  {
+			loop ag over: people  {
+				data ag.name value: ag.opinion color: #blue;
+		}
+		}
+			}	
+	}
+}
+
 
 
 experiment Pedestrian_exp type: gui {

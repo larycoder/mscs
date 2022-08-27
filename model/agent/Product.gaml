@@ -21,8 +21,11 @@ import "../Main.gaml"
  */
 global {
 	file product_data_file <- csv_file("../includes/product.csv", ",", string, true);
-	geometry shape <- square(50);
-
+//	geometry shape <- square(50);
+	geometry shape <- envelope(wall_shapefile);
+	// csv file for saving product_place position
+	string product_place_csv <- "../results/product_place.csv";
+	
 	// product strategy by parameter	
 	string eye_level <- "medium" among: ["low", "high", "medium"];
 	string low_level <- "low" among: ["low", "high", "medium"];
@@ -36,6 +39,26 @@ global {
 
 	init {
 		create product_util number: 1; // singleton object
+		
+		// read product_place from csv and initialize them.
+		create product_place from: csv_file(product_place_csv, ",", true) with:
+		[name:: read("name"), location::{float(read("location.x")), float(read("location.y")), float(read("location.z"))}];
+		ask product_place {
+			cell <- one_of(floor_cell where (not empty([self] inside each)));
+			shape <- cell.shape;
+			location <- cell.location;
+		}
+		
+		create product_type from: product_data_file;
+		ask product_util {
+			do create_product_link;
+			
+			// Add products by default
+			do get_param_strategy;
+			do shuffle;
+		}
+		
+		
 	}
 
 	// mouse interaction
@@ -58,6 +81,7 @@ global {
 	}
 
 }
+
 
 species product_type {
 	geometry shape <- circle(0.2);
@@ -153,10 +177,14 @@ species product_place {
 	}
 	
 	aspect default {
+		
+	
+		
 		if color_code = 0 {
-			draw circle(1) color: #black ;
+			draw shape color: #green ;
 		} else if color_code = 1 {
-			draw circle(1) color: #red ;
+			
+			draw shape color: #red ;
 		}
 		
 	}
@@ -296,6 +324,46 @@ experiment product_param_example type: gui {
 			// move product place by mouse
 			event mouse_up action: click;
 			
+			// mouse zone viewer
+			species mouse_zone;
+			event mouse_move action: follow_mouse;
+		}
+
+	}
+
+}
+
+experiment background_with_product_place_example {
+
+	init {
+		
+		// read product_place from csv and initialize them.
+		create product_place from: csv_file(product_place_csv, ",", true) with:
+		[name:: read("name"), location::{float(read("location.x")), float(read("location.y")), float(read("location.z"))}];
+		ask product_place {
+			cell <- one_of(floor_cell where (not empty([self] inside each)));
+			shape <- cell.shape;
+			location <- cell.location;
+		}
+
+	}
+
+	output {
+		display my_store_with_product_place type: opengl {
+			species floors;
+			species pedestrian_path;
+			species wall;
+			species shelves;
+			species doorIn;
+			species floor_cell;
+			species product_place aspect: default;
+//			{
+//				draw shape color: #black;
+//			}
+
+			// move product place by mouse
+			event mouse_up action: click;
+
 			// mouse zone viewer
 			species mouse_zone;
 			event mouse_move action: follow_mouse;

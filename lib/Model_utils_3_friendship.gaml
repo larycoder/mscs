@@ -67,14 +67,15 @@ species people skills: [moving]{
 	}
 	
 	//the agent moves toward its target, when reaching it, it chooses another target as the location of one of the people agent
-//	reflex movement {
-//		if (location distance_to target < 5.0) {
-//			target_people <- one_of(people);
-//			target <- target_people.location;
-//			do updateSize;
-//		}
-//		do goto on:world target:target speed:1 + rnd(2.0);
-//	}
+	reflex movement {
+		if (location distance_to target < 5.0) {
+			target_people <- one_of(people);
+			target <- target_people.location;
+			do updateSize;
+		}
+		do goto on:world target:target speed:1 + rnd(2.0);
+	}
+
 	aspect default {
 		draw circle(size) color: #red;
 	}	

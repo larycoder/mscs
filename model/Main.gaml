@@ -154,7 +154,12 @@ global {
 //			}
 //		}
 		
-		
+		create people number:nb_people {
+			location <- any_location_in(one_of(doorIn));
+			expensive_tolerance <- _expensive_tolerance;
+			happiness <- _happiness;
+			
+		}
 		
 	}
 	
@@ -229,6 +234,26 @@ global {
 		}
 	 }
 	 
+	 action daily_customers_need{
+		// Init random need shopping people with first_customers_rate
+		int dail_need_shopping <- int(abs(daily_customers_rate*nb_people));
+		loop times: dail_need_shopping {
+			people p1 <- one_of(people where(each.need_product != true));
+			p1.need_product <- true;
+			if p1.opinion =nil {
+				p1.opinion <- _opinion; // init first opinion
+			}
+			
+		}
+	 }
+	 
+	 action comeback_for_fun{
+	 	ask people {
+	 		if self.opinion >= comeback_for_fun_opinion_threshold {
+	 			self.need_product <- true;
+	 		}
+	 	}
+	 }
 	 
 	reflex _MAIN_ {
 		
@@ -240,6 +265,23 @@ global {
 		if newDay = true {
 			write "Day: " + numberOfDays ;
 			// do all end of day calculation
+			
+			if numberOfDays >0 {
+				location <- any_location_in(one_of(doorOut));
+				ask people {
+				need_product <- false;
+				status <- DONE;
+				}
+				do daily_customers_need;
+				do comeback_for_fun;
+			}
+			
+			
+			ask people {
+				do calculation_comeback;
+			}
+			
+			
 			do pause;
 		}
 		
@@ -248,10 +290,10 @@ global {
 	action current_time { //} when: every(daily#cycle) {
 
 		// Clock
-		write "bug 1";
+
 		numberOfDays <- numberOfDays + abs((cycle - numberOfDays*cycle_per_day)/cycle_per_day);
-//		write "Day: " + (numberOfDays+1);
-		write "bug 2";
+
+
 		// TODO: recalculate states'
 		if numberOfDays != prevDay{
 //			endDay <- true;
@@ -259,7 +301,7 @@ global {
 		} else {
 			newDay <- false;
 		}
-		write "bug 3";
+
 		prevDay <- numberOfDays;
 	}
 	
@@ -284,53 +326,61 @@ global {
 
 
 ////////////////////////////////// END GLOBAL /////////////////////////////////////////
-experiment time_sim type:gui {
-	
-}
+
 
 
 experiment normal_sim type: gui {
 	
-	init {
-		create shelves from: shelves_shapefile;
+	
+	action create_population {
+		// Init random need shopping people with first_customers_rate
+		int need_shopping <- int(abs(first_customers_rate*nb_people));
+		loop times: need_shopping {
+			people p1 <- one_of(people where(each.need_product != true));
+			p1.need_product <- true;
+			p1.opinion <- _opinion; // init first opinion
+		}
+	}
 
-		open_area <- first(open_area_shape_file.contents);
-		create floors from:open_area_shape_file {
-			shape <- open_area;
-		}
-		
-		create pedestrian_path from: pedestrian_paths_shape_file {
-			list<geometry> fs <- free_spaces_shape_file overlapping self;
-			free_space <- fs first_with (each covers shape); 
-		}
-		network <- as_edge_graph(pedestrian_path);
-		ask pedestrian_path parallel: true{
-			do build_intersection_areas pedestrian_graph: network;
-		}
+	action create_friendship {
+		// Create random friendship graph
+		loop times: abs(nb_people*1.5) {
 
-		create counter from:counter_shapefile;
-		create doorIn from:doorIn_shapefile;
-		create doorOut from:doorOut_shapefile;
-		
-//		do create_population;
+			people p1 <- one_of(people);
+			people p2 <- one_of(list(people) - p1);
+			
+			create friendship_link  {
+				add edge (p1, p2, self) to: friendship_graph;
+				shape <- link(p1,p2);
+			}
+		}
 	}
 	
-	float minimum_cycle_duration <- 0.02;
-		output {
+	init {
+		
+		
+		do create_population;
+		do create_friendship;
+		ask people{
+			
+			do make_friends;
+		}
+	}
+	output {
 		display map type: opengl{
-			species floors aspect: default;
+//			species floors aspect: default;
 			species wall refresh: false;
 			species shelves aspect: default;
-			species floor_cell;
+//			species floor_cell;
 			species counter aspect: default;
 			species doorIn aspect: default;
 			species doorOut aspect: default;
 			
 //			species pedestrian_path aspect:free_area_aspect transparency: 0.5 ;
-			species pedestrian_path refresh: false;
+//			species pedestrian_path refresh: false;
 			species people;
-			species product_type;
-			
+//			species product_type;
+			species product_place aspect: default;
 			
 			
 			
@@ -340,18 +390,22 @@ experiment normal_sim type: gui {
 			species friendship_link ;
 			species people aspect: friends_default;
 			}
-		display product_type type: opengl{
-			species product_link ;
-			species product_type;
-			}
-		display reputation_graph refresh: every(daily#cycle) { //refresh reputation graph daily
+//		display product_type type: opengl{
+//			species product_link ;
+//			species product_type;
+//			}
+		display reputation_graph refresh: every(1#cycle) { //refresh reputation graph daily
 			
 			chart "Reputation in Population" type: series  {
+			write "chart no of people "+ length(people);
 			loop ag over: people  {
+				write"chart people name "+ ag.name;
 				data ag.name value: ag.opinion color: #blue;
-		}
-		}
+				}
+				
 			}
+		}
+			
 	}
 }
  
