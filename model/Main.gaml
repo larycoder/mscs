@@ -158,7 +158,7 @@ global {
 			location <- any_location_in(one_of(doorIn));
 			expensive_tolerance <- _expensive_tolerance;
 			happiness <- _happiness;
-			
+			write "Create person " + name ;
 		}
 		
 	}
@@ -240,10 +240,16 @@ global {
 		loop times: dail_need_shopping {
 			people p1 <- one_of(people where(each.need_product != true));
 			p1.need_product <- true;
+			
+			// TODO: making randome list of product
+			ask p1 {
+				productList <- ["pen", "examsheet", "coffee_pot", "curtains"];
+			}
+			
 			if p1.opinion =nil {
 				p1.opinion <- _opinion; // init first opinion
 			}
-			
+			write p1.name + " need shopping";
 		}
 	 }
 	 
@@ -251,6 +257,12 @@ global {
 	 	ask people {
 	 		if self.opinion >= comeback_for_fun_opinion_threshold {
 	 			self.need_product <- true;
+	 			
+	 			// TODO: making randome list of product
+				
+				self.productList <- ["pen", "examsheet", "coffee_pot", "curtains"];
+				write self.name + " need shopping for fun";
+			
 	 		}
 	 	}
 	 }
@@ -267,8 +279,9 @@ global {
 			// do all end of day calculation
 			
 			if numberOfDays >0 {
-				location <- any_location_in(one_of(doorOut));
+				
 				ask people {
+				location <- any_location_in(one_of(doorOut));
 				need_product <- false;
 				status <- DONE;
 				}
@@ -394,7 +407,7 @@ experiment normal_sim type: gui {
 //			species product_link ;
 //			species product_type;
 //			}
-		display reputation_graph refresh: every(1#cycle) { //refresh reputation graph daily
+		display reputation_graph refresh: every(cycle_per_day#cycle) { //refresh reputation graph daily
 			
 			chart "Reputation in Population" type: series  {
 			write "chart no of people "+ length(people);

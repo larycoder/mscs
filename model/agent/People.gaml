@@ -248,6 +248,7 @@ species people skills: [pedestrian, moving] parallel: true{
 				do get_product;
 				if length (productList) =0{
 					status <- COUNTER;
+					write "empty product list";
 				}
 			}
 			if status = COUNTER{
