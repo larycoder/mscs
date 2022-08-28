@@ -15,6 +15,10 @@ import "People.gaml"
 
 
 
+global {
+	graph friendship_graph <- graph([]);
+}
+
 species friendship_link parallel: true{
 	
 	aspect default {

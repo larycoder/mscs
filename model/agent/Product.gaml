@@ -33,7 +33,9 @@ global {
 
 	// product order strategy
 	map<string, string> strategy <- ["eye"::"medium", "high"::"high", "low"::"low"]; // default
-
+	list<string> total_product_list <- ["pen","examsheet", "notebook", "coffee_pot", "bottle_of_sunscreen", "curtains",
+		"eraser", "scissors", "headphones", "mouse"
+	];
 	// product link present
 	graph product_graph <- graph([]);
 

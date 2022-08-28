@@ -51,13 +51,13 @@ global {
 	geometry shape <- envelope(wall_shapefile);
 	
 	//	float step <- 0.1;
-	int remaining_time min: 0;
-	bool run_business <- false ;
-	int current_cycle <- 0 ;
+//	int remaining_time min: 0;
+//	bool run_business <- false ;
+//	int current_cycle <- 0 ;
 	
 	
 //	int nb_people <- 10;
-	int nb_product <- 15;
+//	int nb_product <- 15;
 	
 	//social graph (not spatial) representing the friendship links between people
 //	graph friendship_graph <- graph([]);
@@ -65,14 +65,14 @@ global {
 	
 	//Time definition
 	float step <- 1 #second; 
- 	int daily <- 600 ; //cycles / day
+// 	int daily <- 600 ; //cycles / day
  	int numberOfDays <- 0; 
  	int prevDay <- -1;
  	int shopperCounts;
  	
  	
 	
-	float patienceTime_global <- 600 #cycle;// 5.0 #minute ; 
+//	float patienceTime_global <- 600 #cycle;// 5.0 #minute ; 
 
 	bool newDay <- true;
 //	bool endDay <- false;
@@ -176,63 +176,50 @@ global {
 //
 //	}
 	
-
-	
-//	reflex scan_product {
-//		ask people{
-//			ask my_grid at_distance(3) {
-//	        if(self overlaps myself) {
-//	            self.color_value <- 2;
-//	        } else if (self.color_value != 2) {
-//	            self.color_value <- 1;
-//	        }
-//	        }
-//	}
-//	}
 	 
 	 // New
-	 action update_display {
-	 	
-	 }
+//	 action update_display {
+//	 	
+//	 }
 	 
 	 // New
-	 action update_profit {
-	 	
-	 }
+//	 action update_profit {
+//	 	
+//	 }
 	 
 	 // New
-	 action update_reputation {
-	 	
-	 }
-	 
+//	 action update_reputation {
+//	 	
+//	 }
+//	 
 	 // New
-	 action re_init_all {
-	 	
-	 }
+//	 action re_init_all {
+//	 	
+//	 }
 		
 	 
 	 // New
-	 action calculation_end_of_day {
-	 	
-	 	// TODO: calculation profit
-	 	do update_profit;
-	 	// TODO: update reputation
-	 	do update_reputation;
-	 	// TODO: re-init params
-	 	do re_init_all;
-	 	
-	 	if not run_business {
-	 		ask world {
-	 			do resume;
-	 		}
-	 	}
-	 	
-	 	days <- days + 1;
-		do update_display;
-		if days > end_of_game {
-			do pause;
-		}
-	 }
+//	 action calculation_end_of_day {
+//	 	
+//	 	// TODO: calculation profit
+//	 	do update_profit;
+//	 	// TODO: update reputation
+//	 	do update_reputation;
+//	 	// TODO: re-init params
+//	 	do re_init_all;
+//	 	
+//	 	if not run_business {
+//	 		ask world {
+//	 			do resume;
+//	 		}
+//	 	}
+//	 	
+//	 	days <- days + 1;
+//		do update_display;
+//		if days > end_of_game {
+//			do pause;
+//		}
+//	 }
 	 
 	 action daily_customers_need{
 		// Init random need shopping people with first_customers_rate
@@ -243,7 +230,7 @@ global {
 			
 			// TODO: making randome list of product
 			ask p1 {
-				productList <- ["pen", "examsheet", "coffee_pot", "curtains"];
+				productList <- rnd(1, length(total_product_list)) among total_product_list;
 			}
 			
 			if p1.opinion =nil {
@@ -260,7 +247,7 @@ global {
 	 			
 	 			// TODO: making randome list of product
 				
-				self.productList <- ["pen", "examsheet", "coffee_pot", "curtains"];
+				self.productList <- rnd(1, length(total_product_list)) among total_product_list;
 				write self.name + " need shopping for fun";
 			
 	 		}
@@ -277,11 +264,17 @@ global {
 		if newDay = true {
 			write "Day: " + numberOfDays ;
 			// do all end of day calculation
-			
+			converge  <- rnd(1,10);
 			if numberOfDays >0 {
 				
+				
+				
 				ask people {
-				location <- any_location_in(one_of(doorOut));
+					
+				if need_product != nil and (need_product = true) {
+						location <- any_location_in(one_of(doorOut));
+					}
+					
 				need_product <- false;
 				status <- DONE;
 				}

@@ -20,7 +20,7 @@ global{
 	
 	float P_shoulder_length <- 0.45 parameter: true;
 	float P_proba_detour <- 0.5 parameter: true ;
-	bool P_avoid_other <- true parameter: true ;
+	bool P_avoid_other <- false parameter: true ;
 	float P_obstacle_consideration_distance <- 3.0 parameter: true ;
 	float P_pedestrian_consideration_distance <- 3.0 parameter: true ;
 	float P_tolerance_target <- 0.1 parameter: true;
@@ -47,7 +47,7 @@ global{
 	
 	geometry shape <- envelope(wall_shapefile);
 	
-	graph friendship_graph <- graph([]);
+	
 	
 }
 
@@ -64,7 +64,7 @@ species people skills: [pedestrian, moving] parallel: true{
 	floor_cell cell;
 	
 	rgb color <- rnd_color(255);
-	float speed <- gauss(1,0.1) #km/#h min: 0.1 #km/#h;
+	float speed <- gauss(3,2) #km/#h min: 2 #km/#h;
 	
 	point target ;
 	point friend_map <- any_location_in(world);
@@ -79,20 +79,19 @@ species people skills: [pedestrian, moving] parallel: true{
 	float payment_time <- 0;
 	
 	bool need_product <- false;
-	list<string> productList <- ["pen", "examsheet", "coffee_pot", "curtains"];
+	list<string> productList <- rnd(1, length(total_product_list)) among total_product_list;
+
 	int needNumber <- length(productList);
-//	list<point> checkProd;
+
 	map<string,int> boughtList <- []; // "price_type"::price
-//	map<string,int> map_of_string_int <- ["A"::1,"B"::2,"C"::3];
+
 	list<product_type> foundList <- [];
 	
 	int found_number <-0;
 	float foundTime;
 	
 	float money_spend <- 0.0;
-//	string current_status;
-//	float view_dist<-5.0; //dist seeing the product
-//	float pick_dist<-1.0; //dist to pick the product
+
 	
 	list<people> friends;
 	
@@ -139,33 +138,11 @@ species people skills: [pedestrian, moving] parallel: true{
 	
 	
 	
-	
-	
-	
-//	action re_init {
-//		write "re-init people";
-//		walkinTime <- nil;
-//		searching_time<- 0;
-//		payment_time <- 0;
-//		comeback_rate_threshold <- 0.7; // assume that first happiness > 0.5
-////		do add_desire(travel_to_shop);
-//		target <- nil;
-//		shopper <- false;
-//	}
-	
 	action make_friends {
 		friends <- list<people>(friendship_graph neighbors_of (self));
 	}
 	
-	
-	/**
-	 * executed at each iteration to update the agent's Belief base, 
-	 * to know the changes in its environment (the world, the other 
-	 * agents and itself). The agent can perceive other agents up 
-	 * to a fixed distance or inside a specific geometry.
-	 */
-	
-	action calculation_comeback { //when: every(daily#cycle){
+	action calculation_comeback {
 //		write "run comeback " +opinion;
 		write "======== Calculate comeback: " +name+ " ==========";
 		write "need_product "+need_product;
@@ -177,12 +154,11 @@ species people skills: [pedestrian, moving] parallel: true{
 		if  (comeback_rate >= comeback_rate_threshold) {
 			
 			need_product <- true;
-			//TODO Hiep: randomize product list
+			
 			shopperCounts <- shopperCounts +1;
 			status <- SHOPPING;
 			write "status "+ status;
-//			shopper <- true;
-//			walkinTime <- time;
+
 		}
 	}
 	
@@ -206,27 +182,7 @@ species people skills: [pedestrian, moving] parallel: true{
 	reflex _MAIN_monitor_current_state {
 		
 		/*We can simplify the model by making days running continuosly not stop or pause. Only pause by game rule and setup */
-//		if shopper {
-//			
-//
-//			searching_time <- walkinTime +patienceTime;
-//			
-//			
-//			if (time > searching_time){
-//				if (length(boughtList)>0){
-//					status <- "counter";
-//				}
-//			}
-//		
-//			if (length(productList)=0 and length(foundList)>0) {
-//				// found all product
-//				status <- "counter";
-//			}
-//			
-//			
-//		}
-		
-		
+
 		// do at begining of each day
 		if newDay = true{
 //			write"New day _people";
@@ -240,6 +196,11 @@ species people skills: [pedestrian, moving] parallel: true{
 		} else {
 			// Do all new day calculation here
 			
+			if need_product = true {
+				status <- SHOPPING;
+			}
+			
+			
 			
 			//Movement actions by status
 			if status = SHOPPING {
@@ -248,7 +209,7 @@ species people skills: [pedestrian, moving] parallel: true{
 				do get_product;
 				if length (productList) =0{
 					status <- COUNTER;
-					write "empty product list";
+//					write "empty product list";
 				}
 			}
 			if status = COUNTER{
@@ -296,17 +257,7 @@ species people skills: [pedestrian, moving] parallel: true{
 
 				loop i over: chosen_one {
 					i.color_code <-1;
-//					write "Product place name: " + i.name;
 
-					// add product to list here
-//					write "Products Found";
-//					write "high: " + i.high.type.name;
-//					write "-> price: " + i.high.type.price_type + " " + i.high.type.price;
-//					write "eye: " + i.eye.type.name;
-//					write "-> price: " + i.eye.type.price_type + " " + i.eye.type.price;
-//					write "low: " + i.low.type.name;
-//					write "-> price: " + i.low.type.price_type + " " + i.low.type.price;
-					
 					// Priority level:  Eye-level > top-level > lower-level
 					if i.eye.type.name in myself.productList{
 						add i.eye.type to: myself.foundList;
@@ -347,10 +298,7 @@ species people skills: [pedestrian, moving] parallel: true{
 		// do probability to buy 
 		do buying_decision;
 		
-		// check for end condition
-//		do stop_shopping;
-		// paying (optional)
-		
+
 	}
 	action pay{
 //		money_spend
@@ -405,15 +353,17 @@ species people skills: [pedestrian, moving] parallel: true{
 		}else{bought_per_shoppingList <- (found_number/needNumber);}
 		
 		happiness <- (bought_per_shoppingList) * price_happines;
+		opinion <- opinion + _happiness_impact_to_opinion*(happiness-opinion);
 	}
 	
 	action spreadRumors {
+		
 		ask friends{
 			if(abs(myself.opinion-opinion) < rumor_threshold ){ //only influence if there is a opinion difference
-				float temp <- happiness;
+				float temp <- opinion;
 			// influencing formulae
-			opinion <- opinion + converge*(myself.happiness-opinion);
-			myself.opinion <- myself.opinion + converge*abs(myself.opinion-temp);
+			opinion <- opinion + (myself.opinion-opinion)*(myself.opinion-opinion)*converge;
+			myself.opinion <- myself.opinion + abs(myself.opinion-temp)*abs(myself.opinion-temp)*converge;
 			}
 		}
 	}
@@ -505,7 +455,7 @@ experiment main_people_exp type: gui {
 	}
 	action create_friendship {
 		// Create random friendship graph
-		loop times: abs(nb_people*1.5) {
+		loop times: abs(nb_people*average_nb_friendPerPerson) {
 
 			people p1 <- one_of(people);
 			people p2 <- one_of(list(people) - p1);
@@ -547,19 +497,7 @@ experiment main_people_exp type: gui {
 			do make_friends;
 		}
 		
-//		friends <- list<people>(friendship_graph neighbors_of (self));
-	}
-		
-//		reflex move {
-//			ask people {
-//				movement <- "wander";
-//				do moveAround;
-//			}
-//		}
-		
-		
-		
-		
+	}		
 		
 		output {
 		display map type: opengl{
@@ -577,7 +515,7 @@ experiment main_people_exp type: gui {
 			species people aspect: friends_default;
 			}
 			
-		display reputation_graph refresh: every(daily#cycle) { //refresh reputation graph daily
+		display reputation_graph refresh: every(cycle_per_day#cycle) { //refresh reputation graph daily
 			
 			chart "Reputation in Population" type: series  {
 			loop ag over: people  {
