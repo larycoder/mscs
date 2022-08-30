@@ -77,6 +77,8 @@ global {
 	bool newDay <- true;
 //	bool endDay <- false;
 
+//	float round_revenue update: people sum_of each.money_spend;
+//	float round_shopping_nb update: people count (each.status = SHOPPING);
 	
 	init {
 //		create counter from:counter_shapefile;
@@ -178,14 +180,29 @@ global {
 	
 	 
 	 // New
-//	 action update_display {
-//	 	
-//	 }
+	 action update_display {
+	 	
+	 	round_buying_nb <- 0.0;
+	 	round_buying_nb <- people sum_of(each.found_number);
+	 	write "Number of bought products today: " + round_buying_nb;
+	 	
+	 	round_shopping_nb <- people count (each.comeback_rate >= comeback_rate_threshold);
+	 	if round_shopping_nb != nil {
+	 		write "Number of shoppers in the next day: " + round_shopping_nb;
+	 	}
+	 }
 	 
 	 // New
-//	 action update_profit {
-//	 	
-//	 }
+	 action update_profit {
+	 	
+	 	round_revenue <- people sum_of(each.money_spend);
+	 	if round_revenue != nil {
+	 		
+	 		write "All time Revenue : " + round_revenue;
+	 	}
+	 	
+	 	
+	 }
 	 
 	 // New
 //	 action update_reputation {
@@ -263,13 +280,15 @@ global {
 		// Pause every day to re config strategy
 		if newDay = true {
 			write "Day: " + numberOfDays ;
+			
+			
 			// do all end of day calculation
 			converge  <- rnd(1,10);
 			if numberOfDays >0 {
 				
 				
 				
-				ask people {
+				ask people {	// reset people
 					
 				if need_product != nil and (need_product = true) {
 						location <- any_location_in(one_of(doorOut));
@@ -278,16 +297,28 @@ global {
 				need_product <- false;
 				status <- DONE;
 				}
+				
+				write "create needs";	// recalculate needs
 				do daily_customers_need;
 				do comeback_for_fun;
 			}
 			
 			
 			ask people {
-				do calculation_comeback;
+				if myself.numberOfDays >0 { // calculate today statistic
+					do pay;
+					do population_calculation;
+					do calculation_comeback; // calculate comeback next day
+				}
+				
+				boughtList <- [];
+				foundList <- [];
+				
+//				found_number <-0;
 			}
-			
-			
+			write "$$$$$$$$  World Statistic! $$$$$$$$";
+			do update_profit;
+			do update_display;
 			do pause;
 		}
 		
@@ -370,7 +401,9 @@ experiment normal_sim type: gui {
 		ask people{
 			
 			do make_friends;
+			do calculation_comeback;
 		}
+		
 	}
 	output {
 		display map type: opengl{

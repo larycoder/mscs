@@ -58,7 +58,7 @@ global{
 	// experiment output value
 	 float round_revenue <- 0.0;
 	 float round_shopping_nb <- 0.0;
-	 float round_buying_nb <- 0.0;
-	 float round_avg_hapiness <- 0.0;
+	 int round_buying_nb <- 0;
+//	 float round_avg_hapiness <- 0.0;
 
 }

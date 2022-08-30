@@ -87,12 +87,13 @@ species people skills: [pedestrian, moving] parallel: true{
 
 	list<product_type> foundList <- [];
 	
-	int found_number <-0;
+	int found_number ;
+	float bought_per_shoppingList ;
 	float foundTime;
 	
-	float money_spend <- 0.0;
-
 	
+
+	float money_spend <- 0.0;
 	list<people> friends;
 	
 	
@@ -148,7 +149,11 @@ species people skills: [pedestrian, moving] parallel: true{
 		write "need_product "+need_product;
 		write "opinion "+opinion;
 		write "happiness "+happiness;
-		
+		write "found_number: " + found_number ;
+		write "needNumber: " + needNumber ;
+		write "bought_per_shoppingList: " + bought_per_shoppingList ;
+		write "price_happines: " + price_happines ;
+		write "All time money_spend : " + money_spend;
 		comeback_rate <- (int(need_product) + opinion + happiness)/3;
 		write "comeback_rate " + comeback_rate;
 		if  (comeback_rate >= comeback_rate_threshold) {
@@ -159,6 +164,8 @@ species people skills: [pedestrian, moving] parallel: true{
 			status <- SHOPPING;
 			write "status "+ status;
 
+		}else{
+			status <- DONE;
 		}
 	}
 	
@@ -188,17 +195,17 @@ species people skills: [pedestrian, moving] parallel: true{
 //			write"New day _people";
 //			status <- DONE;
 			// Do all end day calculation here
-			do pay;
-			do population_calculation;
+//			do pay;
+//			do population_calculation;
 //			do calculation_comeback;
 
 			
 		} else {
 			// Do all new day calculation here
 			
-			if need_product = true {
-				status <- SHOPPING;
-			}
+//			if need_product = true {
+//				status <- SHOPPING;
+//			}
 			
 			
 			
@@ -207,16 +214,16 @@ species people skills: [pedestrian, moving] parallel: true{
 				movement <- "wander";
 				do moveAround;
 				do get_product;
-				if length (productList) =0{
-					status <- COUNTER;
-//					write "empty product list";
-				}
+//				if length (productList) =0{
+//					status <- COUNTER;
+////					write "empty product list";
+//				}
 			}
 			if status = COUNTER{
 //	
-				movement <- "counter";
-//				write "movement " +movement;
-				do moveAround;
+//				movement <- "counter";
+////				write "movement " +movement;
+//				do moveAround;
 			}
 			if status = DONE {
 				
@@ -281,6 +288,7 @@ species people skills: [pedestrian, moving] parallel: true{
 	
 	// New
 	action buying_decision {
+		
 		loop i over: foundList{
 
 			add i.price_type::i.price to: boughtList;
@@ -302,6 +310,7 @@ species people skills: [pedestrian, moving] parallel: true{
 	}
 	action pay{
 //		money_spend
+		found_number <-0;
 		loop i over: boughtList.pairs{
 			
 			
@@ -324,7 +333,7 @@ species people skills: [pedestrian, moving] parallel: true{
 				}
 			}
 		}
-		
+//		write "found_number pay: "+ found_number;
 		
 		
 	}
@@ -335,6 +344,7 @@ species people skills: [pedestrian, moving] parallel: true{
 		// do by the end of the day
 		do calculation_happiness;
 		do spreadRumors;
+//		write "found_numbe __r ___pop: " + found_number ;
 		
 		//TODO Update sale numbers
 	} 
@@ -347,7 +357,8 @@ species people skills: [pedestrian, moving] parallel: true{
 //		float searchingTime <-  (foundTime - walkinTime)/patienceTime;
 //		float paymentTime <- payment_time/patienceTime;
 		
-		float bought_per_shoppingList ;
+		
+//		write "found_numbe __r: " + found_number ;
 		if (found_number = 0){
 			bought_per_shoppingList <- 0;
 		}else{bought_per_shoppingList <- (found_number/needNumber);}
