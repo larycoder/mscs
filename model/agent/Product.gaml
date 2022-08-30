@@ -8,7 +8,7 @@ model Product
 
 import "../parameters.gaml"
 import "Background.gaml"
-import "../Main.gaml"
+
 /**
  * Product shuffle strategy:
  * 
@@ -119,7 +119,7 @@ species product_instance {
 
 	aspect three_d {
 		do update_view;
-		draw sphere(1) color: color;
+		draw sphere(0.5#m) color: color;
 	}
 
 }
@@ -144,13 +144,13 @@ species product_place {
 	action add_instance (product_instance p, string level) {
 		if (level = "high") {
 			high <- p;
-			high.location <- {location.x, location.y, 25.0};
+			high.location <- {location.x, location.y, 2.5};
 		} else if (level = "eye") {
 			eye <- p;
-			eye.location <- {location.x, location.y, 15.0};
+			eye.location <- {location.x, location.y, 1.5};
 		} else {
 			low <- p;
-			low.location <- {location.x, location.y, 5.0};
+			low.location <- {location.x, location.y, 0.5};
 		}
 
 	}

@@ -8,7 +8,9 @@ model Experience
 
 import "agent/Background.gaml"
 import "agent/Product.gaml"
-import "Main.gaml"
+
+import "parameters.gaml"
+
 
 /* Insert your model definition here */
 global {
@@ -36,6 +38,89 @@ global {
 			do create_product_link;
 		}
 
+		// read product_place from csv and initialize them.
+		// NOTE: if wanting to arrange product position, comment below lines
+		create product_place from: csv_file(product_place_csv, ",", true) with:
+		[name:: read("name"), location::{float(read("location.x")), float(read("location.y")), float(read("location.z"))}];
+		ask product_place {
+			cell <- one_of(floor_cell where (not empty([self] inside each)));
+			shape <- cell.shape;
+			location <- cell.location;
+		}
+
+		create product_util number: 1 {
+			do shuffle;
+			do die;
+		}
+
+	}
+
+}
+
+experiment gui_exploit {
+	parameter "high level" var: high_level;
+	parameter "eye level" var: eye_level;
+	parameter "low level" var: low_level;
+
+	user_command "shuffle product to places" {
+		ask product_util {
+			do get_param_strategy;
+			do shuffle;
+			write "product util [" + name + "]: shuffle product to product place";
+		}
+
+	}
+
+	output {
+		display timeline {
+			chart "timeline" type: series {
+				data "round revenue" value: round_revenue color: #red;
+				data "round shopping number" value: round_shopping_nb color: #green;
+				data "round buying number" value: round_buying_nb color: #brown;
+				data "round average hapiness" value: round_avg_hapiness color: #yellow;
+			}
+
+		}
+
+		display bar_value {
+			chart "bar chart of values" type: histogram {
+				datalist ["round revenue", "round shopping number", "round buying number", "round average hapiness"] value:
+				[round_revenue, round_shopping_nb, round_buying_nb, round_avg_hapiness];
+			}
+
+		}
+
+		display store_view type: opengl {
+			species floors;
+			species pedestrian_path;
+			species wall;
+			species shelf;
+			species door;
+			species floor_cell;
+			species product_place {
+				draw shape color: #black;
+			}
+
+			species product_instance aspect: three_d;
+
+			// mouse zone viewer
+			species mouse_zone;
+			event mouse_move action: follow_mouse;
+		}
+
+	}
+
+}
+
+experiment batch_exploit type: batch repeat: 5 keep_seed: true until: cycle > 1000 {
+	permanent {
+		display "permanent" {
+			chart "permanent timeline" type: series {
+				data "simulation timeline" value: round_revenue color: #red;
+			}
+
+		}
+
 	}
 
 }
@@ -44,22 +129,11 @@ global {
  * Allow user to sort product place by mouse click and save their position to csv file.
  */
 experiment arrange_and_store_product_position_in_csv {
-	parameter "high level" var: high_level;
-	parameter "eye level" var: eye_level;
-	parameter "low level" var: low_level;
 	user_command "add product place" {
 		create product_place {
 			cell <- one_of(floor_cell where (empty(product_place inside each)));
 			shape <- cell.shape;
 			location <- cell.location;
-		}
-
-	}
-
-	user_command "shuffle product to places" {
-		ask product_util {
-			do get_player_strategy;
-			do shuffle;
 		}
 
 	}
@@ -75,44 +149,6 @@ experiment arrange_and_store_product_position_in_csv {
 
 	output {
 		display my_store type: opengl {
-			species floors;
-			species pedestrian_path;
-			species wall;
-			species shelf;
-			species door;
-			species floor_cell;
-			species product_place {
-				draw shape color: #black;
-			}
-
-			// move product place by mouse
-			event mouse_up action: click;
-
-			// mouse zone viewer
-			species mouse_zone;
-			event mouse_move action: follow_mouse;
-		}
-
-	}
-
-}
-
-experiment background_with_product_place_example {
-
-	init {
-		// read product_place from csv and initialize them.
-		create product_place from: csv_file(product_place_csv, ",", true) with:
-		[name:: read("name"), location::{float(read("location.x")), float(read("location.y")), float(read("location.z"))}];
-		ask product_place {
-			cell <- one_of(floor_cell where (not empty([self] inside each)));
-			shape <- cell.shape;
-			location <- cell.location;
-		}
-
-	}
-
-	output {
-		display my_store_with_product_place type: opengl {
 			species floors;
 			species pedestrian_path;
 			species wall;

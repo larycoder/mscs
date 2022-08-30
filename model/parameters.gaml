@@ -19,6 +19,7 @@ global{
 	float time_for_a_day <- 20#s;//2 #mn;
 	int end_of_game <- 30; //days
 	int days <- 0;
+
 	int cycle_per_day <- 100;
 	
 	// People
@@ -53,4 +54,11 @@ global{
 	string LOW_RATE <- 0.3;
 	
 	
+	
+	// experiment output value
+	 float round_revenue <- 0.0;
+	 float round_shopping_nb <- 0.0;
+	 float round_buying_nb <- 0.0;
+	 float round_avg_hapiness <- 0.0;
+
 }
