@@ -14,24 +14,19 @@ import "parameters.gaml"
 
 /* Insert your model definition here */
 global {
-	geometry shape <- envelope(open_area_file);
+	geometry shape <- envelope(open_area_shape_file);
 
 	// csv file for saving product_place position
 	string product_place_csv <- "../results/product_place.csv";
 
 	init {
 		create mouse_zone;
-		create pedestrian_path from: pedestrian_paths_file;
-		create floors from: open_area_file;
-		create shelf from: shelves_shape_file;
-		create wall from: wall_shape_file;
-		create door from: door_in_shape_file {
-			door_type <- DOOR_IN;
-		}
-
-		create door from: door_out_shape_file {
-			door_type <- DOOR_OUT;
-		}
+		create pedestrian_path from: pedestrian_paths_shape_file;
+		create floors from: open_area_shape_file;
+		create shelves from: shelves_shapefile;
+		create wall from: wall_shapefile;
+		create doorIn from: doorIn_shapefile;
+		create doorOut from: doorOut_shapefile;
 
 		create product_type from: product_data_file;
 		ask product_util {
@@ -77,7 +72,7 @@ experiment gui_exploit {
 				data "round revenue" value: round_revenue color: #red;
 				data "round shopping number" value: round_shopping_nb color: #green;
 				data "round buying number" value: round_buying_nb color: #brown;
-				data "round average hapiness" value: round_avg_hapiness color: #yellow;
+				//data "round average hapiness" value: round_avg_hapiness color: #yellow;
 			}
 
 		}
@@ -85,7 +80,7 @@ experiment gui_exploit {
 		display bar_value {
 			chart "bar chart of values" type: histogram {
 				datalist ["round revenue", "round shopping number", "round buying number", "round average hapiness"] value:
-				[round_revenue, round_shopping_nb, round_buying_nb, round_avg_hapiness];
+				[round_revenue, round_shopping_nb, round_buying_nb, 0.0];
 			}
 
 		}
@@ -94,8 +89,9 @@ experiment gui_exploit {
 			species floors;
 			species pedestrian_path;
 			species wall;
-			species shelf;
-			species door;
+			species shelves;
+			species doorIn;
+			species doorOut;
 			species floor_cell;
 			species product_place {
 				draw shape color: #black;
@@ -152,8 +148,9 @@ experiment arrange_and_store_product_position_in_csv {
 			species floors;
 			species pedestrian_path;
 			species wall;
-			species shelf;
-			species door;
+			species shelves;
+			species doorIn;
+			species doorOut;
 			species floor_cell;
 			species product_place {
 				draw shape color: #black;
