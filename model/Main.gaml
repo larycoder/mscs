@@ -193,15 +193,11 @@ global {
 	 }
 	 
 	 // New
-	 action update_profit {
-	 	
+	 action update_profit {	
 	 	round_revenue <- people sum_of(each.money_spend);
 	 	if round_revenue != nil {
-	 		
 	 		write "All time Revenue : " + round_revenue;
-	 	}
-	 	
-	 	
+	 	}	
 	 }
 	 
 	 // New

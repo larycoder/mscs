@@ -23,7 +23,7 @@ global{
 	int cycle_per_day <- 100;
 	
 	// People
-	int nb_people <- 100;
+	int nb_people <- 2;
 	int average_nb_friendPerPerson <- 3; //default 3
 	float first_customers_rate <- 0.3 ; // 30% of population
 	float daily_customers_rate <- 0.7; // 10% of population
@@ -31,8 +31,8 @@ global{
 //	float patienceTime <-  30#minute ;
 	float rumor_threshold <-0.1;
 	float converge <- rnd(1,10);
-	float comeback_rate_threshold <-0.6 min: 0.6; // as first opinion is 0.8
-	float comeback_for_fun_opinion_threshold <-0.7 min: 0.7; // as first opinion is 0.8
+	float comeback_rate_threshold <-0.6; // as first opinion is 0.8
+	float comeback_for_fun_opinion_threshold <-0.7; // as first opinion is 0.8
 	float _opinion <- 0.8  max:1.0; // init
 	float _happiness <-0 max:1.0;
 	float _happiness_impact_to_opinion <- 0.5; // default 0.5
@@ -59,6 +59,6 @@ global{
 	 float round_revenue <- 0.0;
 	 float round_shopping_nb <- 0.0;
 	 int round_buying_nb <- 0;
-//	 float round_avg_hapiness <- 0.0;
+	 float round_avg_hapiness <- 0.0;
 
 }
